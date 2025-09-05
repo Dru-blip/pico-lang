@@ -2,12 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "ast.h"
-#include "constants.h"
-#include "hir.h"
-#include "node_iter.h"
+#include "compiler/ast.h"
+#include "compiler/constants.h"
+#include "compiler/hir.h"
+#include "compiler/node_iter.h"
 #include "stb_ds.h"
-#include "token.h"
+#include "compiler/token.h"
 
 typedef struct gen_context {
     const char *filename;

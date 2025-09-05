@@ -1,4 +1,4 @@
-#include "token.h"
+#include "compiler/token.h"
 #include <stdint.h>
 #include <stdio.h>
 #include "stb_ds.h"

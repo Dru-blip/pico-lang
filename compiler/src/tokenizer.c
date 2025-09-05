@@ -1,12 +1,11 @@
-#include "tokenizer.h"
-
+#include "compiler/tokenizer.h"
+#include "compiler/token.h"
 #include "stb_ds.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "token.h"
 
 static TokenKind lookup_keyword(const char *ident) {
     for (size_t i = 0; i < sizeof(keywords) / sizeof(keywords[0]); ++i) {

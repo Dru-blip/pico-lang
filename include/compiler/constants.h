@@ -6,7 +6,7 @@ typedef ConstLit* ConstLitRef;
 typedef ConstLit* const_lit_list_t;
 typedef uint32_t const_lit_index_t ;
 
-typedef enum const_kind {
+typedef enum const_kind:uint8_t {
     CONST_INT,
 } ConstKind;
 
