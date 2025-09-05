@@ -1,4 +1,3 @@
-
 #include "token.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -22,7 +21,7 @@ void print_token(const Token *token) {
 }
 
 
-void print_token_list(const token_list tokens) {
+void print_token_list(const token_list_t tokens) {
     const uint32_t count=arrlen(tokens);
     printf("Token List (%d tokens):\n", count);
     for (size_t i = 0; i < count; i++) {

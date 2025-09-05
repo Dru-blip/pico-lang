@@ -109,7 +109,7 @@ static Token next_token(Tokenizer *t) {
     };
 }
 
-token_list tokenize(const char *source) {
+token_list_t tokenize(const char *source) {
     Tokenizer tokenizer = {
         .src = source,
         .len = strlen(source),

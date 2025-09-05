@@ -23,4 +23,4 @@ static Keyword keywords[] = {
     {"return", TK_KW_RETURN},
 };
 
-token_list tokenize(const char *source);
+token_list_t tokenize(const char *source);

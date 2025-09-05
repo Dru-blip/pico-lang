@@ -1,7 +1,10 @@
-#include "token.h"
-#include "tokenizer.h"
+
+
+#include "ast.h"
+#include "parser.h"
 int main(int argc, char *argv[]){
-    const token_list tokens=tokenize("def main(){return 0;}");
-    print_token_list(tokens);
+    const char *source = "return 0;";
+    const char *filename = "main.pco";
+    AstModule module = parser_parse_module(filename,source);
     return 0;
 }

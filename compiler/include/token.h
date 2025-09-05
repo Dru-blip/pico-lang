@@ -1,6 +1,9 @@
 #pragma once
 #include <stdint.h>
 
+
+typedef uint32_t token_index_t;
+
 typedef struct {
   uint32_t line;
   uint32_t col;
@@ -28,8 +31,7 @@ typedef enum {
   TK_EOF,
 } TokenKind;
 
-static const char *token_kind_labels[] = {
-    ")", "{", "}", ";", "(", "integer", "ident", "def", "return", "eof"};
+static const char *token_kind_labels[] = {")", "{", "}", ";", "(", "integer", "ident", "def", "return", "eof"};
 
 typedef struct {
   TokenKind kind;
@@ -38,5 +40,5 @@ typedef struct {
 } Token;
 
 
-typedef Token* token_list;
-void print_token_list(const token_list tokens);
+typedef Token* token_list_t;
+void print_token_list(const token_list_t tokens);
