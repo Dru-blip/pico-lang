@@ -5,7 +5,8 @@
 
 typedef uint32_t node_index_t;
 typedef struct ast_node AstNode;
-typedef AstNode *node_list_t;
+typedef AstNode* AstNodeRef;
+typedef AstNodeRef ast_node_list_t;
 
 
 typedef enum ast_node_kind {
@@ -27,5 +28,5 @@ typedef struct ast_module {
     const char *source;
     const char *filename;
     token_list_t tokens;
-    node_list_t nodes;
+    ast_node_list_t nodes;
 } AstModule;

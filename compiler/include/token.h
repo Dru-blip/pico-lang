@@ -39,6 +39,6 @@ typedef struct {
   char c_lit;
 } Token;
 
-
-typedef Token* token_list_t;
+typedef Token* TokenRef;
+typedef TokenRef token_list_t;
 void print_token_list(const token_list_t tokens);

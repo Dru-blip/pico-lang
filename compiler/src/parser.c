@@ -40,6 +40,7 @@ static node_index_t reserve_node(Parser *parser, AstNodeKind kind,
     const AstNode node = {
         .kind = kind,
         .tok_i = tok_i,
+        .next = UINT32_MAX,
     };
     arrput(parser->nodes, node);
     return index;
@@ -76,7 +77,7 @@ AstModule parser_parse_module(const char *filename, const char *source) {
         .filename = filename,
         .source = source,
         .tok_i = 0,
-        .nodes = NULL,
+        .nodes = nullptr,
     };
     parse_return(&p);
     return (AstModule){

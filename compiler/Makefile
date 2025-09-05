@@ -1,7 +1,7 @@
 CC      := clang
 CFLAGS  := -Wall -g -O3 -std=c23 -Iinclude
 
-SRC     := main.c src/stb_ds.c src/token.c src/tokenizer.c src/parser.c
+SRC     := main.c src/stb_ds.c src/token.c src/tokenizer.c src/parser.c src/hirgen.c src/constants.c
 
 BINDIR  := out
 TARGET  := $(BINDIR)/picoc

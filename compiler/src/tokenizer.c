@@ -119,7 +119,7 @@ token_list_t tokenize(const char *source) {
         .line_start = 0,
     };
 
-    Token *tokens = NULL;
+    Token *tokens = nullptr;
 
     while (tokenizer.pos <= tokenizer.len) {
         const Token tok = next_token(&tokenizer);
