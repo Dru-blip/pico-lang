@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
     binary = module.emit()
 
-    print("Global Constant Table:", module.const_table)
-    print("Binary:", list(binary))
+    # print("Global Constant Table:", module.const_table)
+    # print("Binary:", list(binary))
     with open("out.pbc", "wb") as f:
         f.write(binary)
