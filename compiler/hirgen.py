@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Param, Block, Return, IntLiteral, Identifier, \
     NodeTag
 from hir import HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag
