@@ -1,6 +1,6 @@
-from tokenizer import Tokenizer
+from hirgen import HirGen
+from parser import Parser
 
 if __name__ == '__main__':
-    tokens = Tokenizer.tokenize("5+6;", "test")
-    for token in tokens:
-        print(token)
+    program = Parser.parse("test.pco", "fn main()void{return 5;} fn add()int{return 5;}")
+    block = HirGen(program).generate()
