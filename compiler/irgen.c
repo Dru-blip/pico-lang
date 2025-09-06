@@ -1,8 +1,8 @@
-#include "compiler/irgen.h"
+// #include "compiler/irgen.h"
 #include "compiler/ast.h"
+#include "compiler/constants.h"
 #include "compiler/hir.h"
 #include "compiler/node_iter.h"
-#include "compiler/constants.h"
 #include "opcode.h"
 #include "stb_ds.h"
 #include <stdint.h>
@@ -25,7 +25,7 @@ static node_index_t hir_iter_get_next(void *nodes, node_index_t idx) {
     return ((hir_node_list_t)nodes)[idx].next;
 }
 
-static void int_to_le_bytes(uint32_t value, uint8_t bytes[4]) {
+static void int_to_le_bytes(int32_t value, uint8_t bytes[4]) {
     bytes[0] = value & 0xFF;
     bytes[1] = (value >> 8) & 0xFF;
     bytes[2] = (value >> 16) & 0xFF;
@@ -91,7 +91,7 @@ static void generate_constant_literals(ir_gen_context_t *ctx) {
     }
 }
 
-BytecodeModule generate_bytecode_module(HirModule *hir_module) {
+void generate_bytecode_module(HirModule *hir_module) {
     ir_gen_context_t ctx = {
         .hir_module = hir_module,
         .code = nullptr,
@@ -101,10 +101,4 @@ BytecodeModule generate_bytecode_module(HirModule *hir_module) {
     };
     generate_constant_literals(&ctx);
     generate_nodes(&ctx);
-    return (BytecodeModule){
-        .code = ctx.code,
-        .const_literals = ctx.const_literals,
-        .header = ctx.header,
-        .const_count = ctx.const_count,
-    };
 }

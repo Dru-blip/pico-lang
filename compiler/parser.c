@@ -1,8 +1,8 @@
 #include "compiler/parser.h"
 #include "compiler/ast.h"
-#include "stb_ds.h"
 #include "compiler/token.h"
 #include "compiler/tokenizer.h"
+#include "stb_ds.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
