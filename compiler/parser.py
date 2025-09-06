@@ -3,13 +3,26 @@ from pico_ast import (
     FunctionPrototype,
     FunctionDeclaration,
     Block,
+    OpTag,
     Return,
     IntLiteral,
     Identifier,
     NamedType,
     Param,
-    Program
+    Program,
+    Assignment,BinOp,
 )
+
+class OperatorKind:
+    Infix = "infix"
+    Assign = "assign"
+
+class Operator:
+    def __init__(self, kind, lbp, rbp, op_tag):
+        self.kind = kind
+        self.lbp = lbp
+        self.rbp = rbp
+        self.op_tag=op_tag
 
 class Parser:
     def __init__(self, filename: str, source: str):
@@ -18,6 +31,26 @@ class Parser:
         self.tokens = Tokenizer.tokenize(source, filename)
         self.pos = 0
         self.current_token = self.tokens[0]
+
+        self.operator_table = {
+            TokenTag.EQUAL: Operator(OperatorKind.Assign,1, 1, OpTag.ASSIGN),
+            TokenTag.PIPE_PIPE: Operator(OperatorKind.Infix,28, 29, OpTag.OR),
+            TokenTag.AMPERSAND_AMPERSAND: Operator(OperatorKind.Infix,30, 31, OpTag.AND),
+
+            TokenTag.EQUAL_EQUAL: Operator(OperatorKind.Infix,45, 46, OpTag.EQ),
+            TokenTag.NOT_EQUAL: Operator(OperatorKind.Infix,45, 46, OpTag.NEQ),
+            TokenTag.LESS: Operator(OperatorKind.Infix,45, 46, OpTag.LT),
+            TokenTag.LESS_EQUAL: Operator(OperatorKind.Infix,45, 46, OpTag.LTE),
+            TokenTag.GREATER: Operator(OperatorKind.Infix,45, 46, OpTag.GT),
+            TokenTag.GREATER_EQUAL: Operator(OperatorKind.Infix,45, 46, OpTag.GTE),
+
+            TokenTag.PLUS: Operator(OperatorKind.Infix,50, 51, OpTag.ADD),
+            TokenTag.MINUS: Operator(OperatorKind.Infix,50, 51, OpTag.SUB),
+            TokenTag.ASTERISK: Operator(OperatorKind.Infix,55, 56, OpTag.MUL),
+            TokenTag.SLASH: Operator(OperatorKind.Infix,55, 56, OpTag.DIV),
+            TokenTag.MODULUS: Operator(OperatorKind.Infix,55, 56, OpTag.MOD),
+        }
+
 
     @staticmethod
     def parse(filename, source):
@@ -96,9 +129,21 @@ class Parser:
 
     def _parse_return(self):
         main_token = self._next_token()
-        expr = self._parse_primary_expr()
+        expr = self._parse_expr()
         self._expect_token(TokenTag.SEMICOLON)
         return Return(main_token, expr)
+
+    def _parse_expr(self, min_bp=0):
+        lhs = self._parse_primary_expr()
+        while True:
+            op_info = self.operator_table.get(self.current_token.tag)
+            if not op_info or op_info.lbp < min_bp:
+                break
+            op_token = self._next_token()
+            rhs = self._parse_expr(op_info.rbp)
+            lhs = BinOp(op_token,op_info.op_tag,lhs, rhs)
+        return lhs
+
 
     def _parse_primary_expr(self):
         token = self._next_token()
