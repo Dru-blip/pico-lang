@@ -39,6 +39,16 @@ static void pico_run_frame(pico_frame *frame) {
             PUSH(READ_CONSTANT())
             break;
         }
+        case OP_ISTORE: {
+            puint index = READ_TWO_BYTES();
+            frame->locals[index] = POP();
+            break;
+        }
+        case OP_ILOAD: {
+            puint index = READ_TWO_BYTES();
+            PUSH(frame->locals[index]);
+            break;
+        }
         case OP_IADD: {
             BINARY_ARITH_INT(+)
             break;
@@ -113,7 +123,7 @@ static void pico_run_frame(pico_frame *frame) {
         }
         case OP_LOG: {
             const pico_value a = POP();
-            printf("%d\n", a.kind);
+            printf("%d\n", a.i_value);
             break;
         }
         case OP_RET: {
@@ -138,6 +148,7 @@ void pico_vm_run() {
     pico_frame frame = PICO_FRAME_NEW(main_func, &vm.stack[vm.sp]);
     vm.frames[vm.fc++] = frame;
     pico_run_frame(&frame);
+    PICO_FRAME_DEINIT(frame);
 }
 
 void pico_vm_shutdown() {

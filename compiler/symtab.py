@@ -9,9 +9,9 @@ class Symbol:
         self.name = name
         self.kind = kind
         self.type = type_id
-        self.stack_offset = 0  # for local variables
+        self.local_offset = 0  # for local variables
         self.scope_depth = scope_depth
-        self.params = []       # for functions
+        self.params = []  # for functions
         self.is_defined = False  # for functions
 
         # assign any extra attributes

@@ -10,7 +10,7 @@ from pico_ast import (
     NamedType,
     Param,
     Program,
-    Assignment, BinOp, Log,
+    Assignment, BinOp, Log, VarDecl, ExprStmt,
 )
 
 
@@ -121,6 +121,21 @@ class Parser:
         return_type = self._parse_type_expr()
         return FunctionPrototype(main_token, ident_token.value, return_type, params)
 
+    def _parse_variable_decl(self):
+        main_token = self._next_token()
+        ident_token = self._expect_token(TokenTag.ID)
+        if self._check(TokenTag.COLON):
+            var_type = self._parse_type_expr()
+        else:
+            var_type = None
+        init = None
+        if self._check(TokenTag.EQUAL):
+            self._advance()
+            init = self._parse_expr(0)
+
+        self._expect_token(TokenTag.SEMICOLON)
+        return VarDecl(main_token, ident_token.value, var_type, init)
+
     def _parse_block(self):
         main_token = self._expect_token(TokenTag.LBRACE)
         stmts = []
@@ -136,8 +151,13 @@ class Parser:
             return self._parse_block()
         elif self._check(TokenTag.KW_LOG):
             return self._parse_log()
+        elif self._check(TokenTag.KW_LET):
+            return self._parse_variable_decl()
         else:
-            raise SyntaxError(f"unexpected token in statement: {self.current_token.tag}")
+            main_token = self.current_token
+            expr = self._parse_expr()
+            self._expect_token(TokenTag.SEMICOLON)
+            return ExprStmt(main_token, expr)
 
     def _parse_return(self):
         main_token = self._next_token()

@@ -1,7 +1,9 @@
 from pico_ast import OpTag
-from hir import BinOp, FunctionBlock, HirBlock, ConstInt, Return, HirLog
+from hir import BinOp, FunctionBlock, HirBlock, ConstInt, Return, HirLog, StoreLocal, VarRef
 
 OP_LIC = 0x05
+OP_ISTORE = 0x0A
+OP_ILOAD = 0x0B
 
 # arithmetic
 OP_IADD = 0x20
@@ -53,13 +55,15 @@ optag_to_opcode = {
 
 
 class FunctionIR:
-    def __init__(self, name_idx: int, bytecode: bytes):
+    def __init__(self, name_idx: int, local_count: int, bytecode: bytes):
         self.name_idx = name_idx
         self.bytecode = bytecode
+        self.local_count = local_count
 
     def serialize(self) -> bytes:
         result = bytearray()
         result += self.name_idx.to_bytes(2, "little")
+        result += self.local_count.to_bytes(2, "little")
         result += len(self.bytecode).to_bytes(4, "little")
         result += self.bytecode
         return result
@@ -83,6 +87,9 @@ class IrModule:
             code.append(OP_LIC)
             idx = self.get_const_index(expr.val)
             code += idx.to_bytes(2, "little")
+        if isinstance(expr, VarRef):
+            code.append(OP_ILOAD)
+            code += expr.symbol.local_offset.to_bytes(2, "little")
         if isinstance(expr, BinOp):
             code += self.compile_expr(expr.lhs)
             code += self.compile_expr(expr.rhs)
@@ -95,18 +102,24 @@ class IrModule:
             if isinstance(node, Return):
                 code += self.compile_expr(node.expr)
                 code.append(OP_RET)
-            if isinstance(node, HirLog):
+            elif isinstance(node, StoreLocal):
+                code += self.compile_expr(node.value)
+                code.append(OP_ISTORE)
+                code += node.symbol.local_offset.to_bytes(2, "little")
+            elif isinstance(node, HirLog):
                 code += self.compile_expr(node.expr)
                 code.append(OP_LOG)
             elif isinstance(node, HirBlock):
                 code += self.generate_bytecode_from_block(node)
+            else:
+                code += self.compile_expr(node)
         return code
 
     def add_function(self, func: FunctionBlock):
         name_idx = self.get_const_index(func.name)
 
         bytecode = self.generate_bytecode_from_block(func)
-        self.functions.append(FunctionIR(name_idx, bytecode))
+        self.functions.append(FunctionIR(name_idx, func.local_count, bytecode))
 
     def emit(self) -> bytes:
         result = bytearray()

@@ -32,6 +32,10 @@ class Sema:
         elif kind == HirNodeTag.Block:
             for stmt in node.nodes:
                 self._analyze_stmt(stmt)
+        elif kind == HirNodeTag.StoreLocal:
+            type_id = self._analyze_expr(node.value)
+            if not node.symbol.type:
+                node.symbol.type = type_id
         else:
             self._analyze_expr(node)
 
@@ -39,6 +43,8 @@ class Sema:
         kind = node.kind
         if kind == HirNodeTag.ConstInt:
             return TypeRegistry.IntType
+        elif kind == HirNodeTag.VarRef:
+            return node.symbol.type
         elif kind == HirNodeTag.BinOp:
             left_type = self._analyze_expr(node.lhs)
             right_type = self._analyze_expr(node.rhs)
@@ -54,7 +60,7 @@ class Sema:
 
             wider_type = self.type_registry.get_common_type(left_type, right_type)
             if wider_type == TypeRegistry.NoneType:
-                raise Exception(f"Error: cannot perform {node.op.lower()} on incompatible types")
+                raise Exception(f"Error: cannot perform {node.op_tag.lower()} on incompatible types")
 
             if left_type != wider_type:
                 node.lhs = Cast(node.lhs.token, node.lhs, left_type, wider_type)

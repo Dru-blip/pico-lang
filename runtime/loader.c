@@ -36,7 +36,7 @@ bytecode_unit load_bytecode(const char *filename) {
             pbyte value[4];
             fread(&value, sizeof(pbyte), 4, file);
             pint constant = value[0] | (value[1] << 8) | (value[2] << 16) |
-                             (value[3] << 24);
+                            (value[3] << 24);
 
             arrput(constants, TO_PICO_INT(constant));
         } else if (tag == 0x02) {
@@ -66,6 +66,10 @@ bytecode_unit load_bytecode(const char *filename) {
         fread(&name_id_bytes, sizeof(pbyte), 2, file);
         puint name_id = name_id_bytes[0] | (name_id_bytes[1] << 8);
 
+        pbyte local_bytes[2];
+        fread(&local_bytes, sizeof(pbyte), 2, file);
+        puint local_count = local_bytes[0] | (local_bytes[1] << 8);
+
         // read function code length
         pbyte code_len_bytes[4];
         fread(&code_len_bytes, sizeof(pbyte), 4, file);
@@ -75,8 +79,10 @@ bytecode_unit load_bytecode(const char *filename) {
         // read function code
         pbyte *code = malloc(code_len);
         fread(code, sizeof(pbyte), code_len, file);
-        pico_function function = {
-            .code = code, .name_id = name_id, .code_len = code_len};
+        pico_function function = {.code = code,
+                                  .name_id = name_id,
+                                  .code_len = code_len,
+                                  .local_count = local_count};
         arrput(functions, function);
     }
 

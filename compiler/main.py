@@ -4,7 +4,7 @@ from parser import Parser
 from sema import Sema
 
 if __name__ == '__main__':
-    program = Parser.parse("test.pco", "fn main()void{log 2==3+2;}")
+    program = Parser.parse("test.pco", "fn main()void{let a=2;let b=3;log a+b*5-8/3;}")
     block = HirGen(program).generate()
     Sema(block).analyze()
     module = IrModule()

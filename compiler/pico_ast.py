@@ -37,10 +37,12 @@ class NodeTag(str, Enum):
     Assignment = "Assignment"
 
     Return = "Return"
+    ExprStmt = "ExprStmt"
     Log = "Log",
     Block = "Block"
 
     Param = "Param"
+    VarDecl = "VarDecl"
     FunctionDeclaration = "FunctionDeclaration"
     FunctionPrototype = "FunctionPrototype"
 
@@ -94,6 +96,11 @@ class FunctionDeclaration(Decl):
         )
 
 
+class VarDecl(Decl):
+    def __init__(self, token, name, type_, init=None):
+        super().__init__(NodeTag.VarDecl, token=token, name=name, type_=type_, init=init)
+
+
 class Stmt(Node):
     def __init__(self, tag: NodeTag, **props):
         super().__init__(tag, **props)
@@ -107,6 +114,11 @@ class Log(Stmt):
 class Return(Stmt):
     def __init__(self, token, expr=None):
         super().__init__(NodeTag.Return, token=token, expr=expr)
+
+
+class ExprStmt(Stmt):
+    def __init__(self, token, expr=None):
+        super().__init__(NodeTag.ExprStmt, token=token, expr=expr)
 
 
 class Block(Stmt):

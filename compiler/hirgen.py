@@ -1,7 +1,9 @@
 from typing import Optional
+
 from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Param, Block, Return, IntLiteral, Identifier, \
     NodeTag
-from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag, HirLog
+from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag, HirLog, StoreLocal, BlockTag, \
+    VarRef
 from pico_types import TypeRegistry
 from symtab import Symbol, SymbolKind
 
@@ -28,7 +30,7 @@ class BlockLabelGenerator:
 class HirGen:
     def __init__(self, program: Program):
         self.program = program
-        self.global_block = HirBlock("Global")
+        self.global_block = HirBlock(HirNodeTag.Block, "Global", None, BlockTag.Global, 0, None)
         self.type_registry = TypeRegistry.get_instance()
         self.function_block: Optional[FunctionBlock] = None
         self.current_block: Optional[HirBlock] = None
@@ -96,6 +98,44 @@ class HirGen:
         self.global_block.symbols[proto.name] = func_symbol
         return func_symbol
 
+    def _generate_var_decl(self, node):
+        if node.type_:
+            type_id = self._transform_type(node.type_)
+        else:
+            type_id = TypeRegistry.NoneType
+        name = self.current_block.resolve(node.name)
+
+        if name and name.scope_depth == self.scope_depth:
+            raise Exception(f"duplicate variable decl {name.name}")
+
+        if name:
+            symbol = Symbol(
+                self._make_unique_name(node.name),
+                SymbolKind.Variable,
+                type_id,
+                self.scope_depth,
+            )
+            self.current_block.name_map[node.name] = symbol
+        else:
+            symbol = Symbol(
+                node.name,
+                SymbolKind.Variable,
+                type_id,
+                self.scope_depth,
+            )
+
+        self.current_block.add_symbol(symbol)
+        value = self._generate_expr(node.init)
+
+        # self.current_block.add_node(
+        #     Alloca(symbol.name, type_id, symbol, node.token)
+        # )
+        self.current_block.add_node(
+            StoreLocal(symbol.name, node.token, symbol, value)
+        )
+        symbol.local_offset = self.function_block.local_count
+        self.function_block.local_count += 1
+
     def _generate_stmt(self, node):
         if node.tag == NodeTag.Block:
             self._generate_block(node)
@@ -103,12 +143,17 @@ class HirGen:
             self._generate_return(node)
         elif node.tag == NodeTag.Log:
             self._generate_log(node)
+        elif node.tag == NodeTag.VarDecl:
+            self._generate_var_decl(node)
+        elif node.tag == NodeTag.ExprStmt:
+            self.current_block.add_node(self._generate_expr(node.expr))
         else:
             raise NotImplementedError(f"Statement {node.tag} not implemented")
 
     def _generate_block(self, node: Block):
         self._begin_scope()
-        block = HirBlock(BlockLabelGenerator.temp(), parent=self.current_block, scope_depth=self.scope_depth)
+        block = HirBlock(HirNodeTag.Block, BlockLabelGenerator.temp(), node.token, block_tag=BlockTag.Local,
+                         parent=self.current_block, scope_depth=self.scope_depth)
         if self.current_block:
             self.current_block.add_node(block)
         self.current_block = block
@@ -129,14 +174,19 @@ class HirGen:
         if node.tag == NodeTag.IntLiteral:
             return ConstInt(node.value)
         elif node.tag == NodeTag.Identifier:
-            symbol = self.current_block.symbols.get(node.name)
+            symbol = self.current_block.name_map.get(node.name)
+            if symbol:
+                return VarRef(node.token, symbol)
+
+            symbol = self.current_block.resolve(node.name)
             if not symbol:
-                raise Exception(f"Undeclared identifier {node.name}")
-            return symbol
-        elif node.tag==NodeTag.BinOp:
-            lhs=self._generate_expr(node.lhs)
-            rhs=self._generate_expr(node.rhs)
-            return BinOp(node.token,node.op_tag,lhs,rhs)
+                raise Exception(f"undeclared identifier {node.name}")
+
+            return VarRef(node.token, symbol)
+        elif node.tag == NodeTag.BinOp:
+            lhs = self._generate_expr(node.lhs)
+            rhs = self._generate_expr(node.rhs)
+            return BinOp(node.token, node.op_tag, lhs, rhs)
         else:
             raise NotImplementedError(f"Expression {node.tag} not implemented")
 
@@ -149,3 +199,8 @@ class HirGen:
             elif type_node.name == "long":
                 return TypeRegistry.LongType
         raise Exception(f"Unknown type {type_node.name}")
+
+    def _make_unique_name(self, name: str) -> str:
+        unique_name = f"{name}{self.var_id_counter}"
+        self.var_id_counter += 1
+        return unique_name
