@@ -13,10 +13,20 @@
 #define PUSH(value) vm.stack[vm.sp++] = value;
 #define POP() vm.stack[--vm.sp]
 
-#define BINARY_INT_OP(op)                                                      \
+#define BINARY_ARITH_INT(op)                                                   \
     const pico_value b = POP();                                                \
     const pico_value a = POP();                                                \
     PUSH(TO_PICO_INT(a.i_value op b.i_value));
+
+#define COMPARE_INT(op)                                                        \
+    const pico_value b = POP();                                                \
+    const pico_value a = POP();                                                \
+    PUSH(((a.i_value op b.i_value) ? PICO_TRUE : PICO_FALSE));
+
+#define LOGICAL_OP(op)                                                         \
+    const pico_value b = POP();                                                \
+    const pico_value a = POP();                                                \
+    PUSH(((a.boolean op b.boolean) ? PICO_TRUE : PICO_FALSE));
 
 static pico_vm vm;
 
@@ -30,48 +40,80 @@ static void pico_run_frame(pico_frame *frame) {
             break;
         }
         case OP_IADD: {
-            BINARY_INT_OP(+)
+            BINARY_ARITH_INT(+)
             break;
         }
         case OP_ISUB: {
-            BINARY_INT_OP(-)
+            BINARY_ARITH_INT(-)
             break;
         }
         case OP_IMUL: {
-            BINARY_INT_OP(*)
+            BINARY_ARITH_INT(*)
             break;
         }
         case OP_IDIV: {
-            BINARY_INT_OP(/)
+            BINARY_ARITH_INT(/)
             break;
         }
         case OP_IREM: {
-            BINARY_INT_OP(%)
+            BINARY_ARITH_INT(%)
             break;
         }
         case OP_IBAND: {
-            BINARY_INT_OP(&)
+            BINARY_ARITH_INT(&)
             break;
         }
         case OP_IBOR: {
-            BINARY_INT_OP(|)
+            BINARY_ARITH_INT(|)
             break;
         }
         case OP_IBXOR: {
-            BINARY_INT_OP(^)
+            BINARY_ARITH_INT(^)
             break;
         }
         case OP_ISHL: {
-            BINARY_INT_OP(<<)
+            BINARY_ARITH_INT(<<)
             break;
         }
         case OP_ISHR: {
-            BINARY_INT_OP(>>)
+            BINARY_ARITH_INT(>>)
+            break;
+        }
+        case OP_IEQ: {
+            COMPARE_INT(==)
+            break;
+        }
+        case OP_INE: {
+            COMPARE_INT(!=)
+            break;
+        }
+        case OP_ILT: {
+            COMPARE_INT(<)
+            break;
+        }
+        case OP_ILE: {
+            COMPARE_INT(<=)
+            break;
+        }
+        case OP_IGT: {
+            COMPARE_INT(>)
+            break;
+        }
+        case OP_IGE: {
+            COMPARE_INT(>=)
+            break;
+        }
+        case OP_IAND: {
+            LOGICAL_OP(&&)
+            break;
+        }
+        case OP_IOR: {
+            LOGICAL_OP(||)
             break;
         }
         case OP_LOG: {
             const pico_value a = POP();
-            printf("%d\n", a.i_value);
+            printf("%d\n", a.kind);
             break;
         }
         case OP_RET: {

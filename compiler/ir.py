@@ -17,11 +17,19 @@ OP_IBXOR = 0x29
 OP_ISHL = 0x2A
 OP_ISHR = 0x2B
 
+OP_IEQ = 0x2C
+OP_INE = 0x2D
+OP_ILT = 0x2E
+OP_ILE = 0x2F
+OP_IGT = 0x30
+OP_IGE = 0x31
+
 # control flow
 OP_RET = 0x66
 
 OP_LOG = 0x85
 
+# TODO: replace with type_tag_matrix
 optag_to_opcode = {
     OpTag.ADD: OP_IADD,
     OpTag.SUB: OP_ISUB,
@@ -35,6 +43,12 @@ optag_to_opcode = {
     OpTag.BXOR: OP_IBXOR,
     OpTag.SHL: OP_ISHL,
     OpTag.SHR: OP_ISHR,
+    OpTag.LT: OP_ILT,
+    OpTag.LTE: OP_ILE,
+    OpTag.GT: OP_IGT,
+    OpTag.GTE: OP_IGE,
+    OpTag.EQ: OP_IEQ,
+    OpTag.NEQ: OP_INE,
 }
 
 

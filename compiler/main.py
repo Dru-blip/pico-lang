@@ -1,10 +1,12 @@
 from hirgen import HirGen
 from ir import IrModule
 from parser import Parser
+from sema import Sema
 
 if __name__ == '__main__':
-    program = Parser.parse("test.pco", "fn main()void{log 2>>3;}")
+    program = Parser.parse("test.pco", "fn main()void{log 2==3+2;}")
     block = HirGen(program).generate()
+    Sema(block).analyze()
     module = IrModule()
 
     for fb in block.nodes:

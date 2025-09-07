@@ -2,6 +2,7 @@ class TypeKind:
     NoneType = "None"
     Void = "Void"
     Int = "int"
+    Bool = "bool"
     Long = "long"
     Function = "function"
 
@@ -18,13 +19,14 @@ class TypeObject:
 
 class TypeRegistry:
     _instance = None
-    type_counter = 4  # index to start storing types
+    type_counter = 5  # index to start storing types
 
     # primitive type IDs
     NoneType = 0
     VoidType = 1
-    IntType = 2
-    LongType = 3
+    BoolType = 2
+    IntType = 3
+    LongType = 4
 
     def __init__(self):
         if TypeRegistry._instance:
@@ -33,8 +35,9 @@ class TypeRegistry:
         self.types = [
             TypeObject(TypeKind.NoneType, size=0, align=0, id=0),
             TypeObject(TypeKind.Void, size=0, align=0, id=1),
-            TypeObject(TypeKind.Int, size=4, align=4, id=2),
-            TypeObject(TypeKind.Long, size=8, align=8, id=3),
+            TypeObject(TypeKind.Bool, size=1, align=1, id=2),
+            TypeObject(TypeKind.Int, size=4, align=4, id=3),
+            TypeObject(TypeKind.Long, size=8, align=8, id=4),
         ]
 
         TypeRegistry._instance = self
@@ -69,6 +72,7 @@ class TypeRegistry:
         return self.types[type_id]
 
     def get_common_type(self, a_type_id, b_type_id):
+        # TODO: replace with type matrix.
         if a_type_id == b_type_id:
             return a_type_id
 
@@ -79,7 +83,7 @@ class TypeRegistry:
             return TypeRegistry.NoneType
 
         if (atype.kind == TypeKind.Int and btype.kind == TypeKind.Long) or \
-           (atype.kind == TypeKind.Long and btype.kind == TypeKind.Int):
+                (atype.kind == TypeKind.Long and btype.kind == TypeKind.Int):
             return TypeRegistry.LongType
 
         return TypeRegistry.NoneType

@@ -1,0 +1,69 @@
+# semantic analyzer
+
+from hir import Cast, HirNodeTag
+from pico_ast import OpTag
+from pico_types import TypeRegistry
+
+
+class Sema:
+    def __init__(self, block):
+        self.block = block
+        self.type_registry: TypeRegistry = TypeRegistry.get_instance()
+
+    def analyze(self):
+        for node in self.block.nodes:
+            self._analyze_function_block(node)
+
+    def _analyze_function_block(self, fb):
+        for node in fb.nodes:
+            self._analyze_stmt(node)
+
+    def _analyze_stmt(self, node):
+        kind = node.kind
+        if kind == HirNodeTag.Return:
+            ret_type = self.type_registry.get_ret_type(node.func_type)
+            val_type = self._analyze_expr(node.expr)
+            # TODO: check for type compatibility for cast
+            if val_type != ret_type:
+                node.expr = Cast(node.token, node.expr, val_type, ret_type)
+            node.type_id = ret_type
+        elif kind == HirNodeTag.Log:
+            self._analyze_expr(node.expr)
+        elif kind == HirNodeTag.Block:
+            for stmt in node.nodes:
+                self._analyze_stmt(stmt)
+        else:
+            self._analyze_expr(node)
+
+    def _analyze_expr(self, node):
+        kind = node.kind
+        if kind == HirNodeTag.ConstInt:
+            return TypeRegistry.IntType
+        elif kind == HirNodeTag.BinOp:
+            left_type = self._analyze_expr(node.lhs)
+            right_type = self._analyze_expr(node.rhs)
+            if node.op_tag in [OpTag.AND, OpTag.OR]:
+                if left_type == TypeRegistry.BoolType and left_type != right_type:
+                    raise Exception(f"Error: both operand types should be boolean for logical operators")
+                node.type_id = left_type
+                return node.type_id
+
+            if node.op_tag in [OpTag.EQ, OpTag.NEQ, OpTag.LT, OpTag.LTE, OpTag.GT, OpTag.GTE]:
+                node.type_id = TypeRegistry.BoolType
+                return node.type_id
+
+            wider_type = self.type_registry.get_common_type(left_type, right_type)
+            if wider_type == TypeRegistry.NoneType:
+                raise Exception(f"Error: cannot perform {node.op.lower()} on incompatible types")
+
+            if left_type != wider_type:
+                node.lhs = Cast(node.lhs.token, node.lhs, left_type, wider_type)
+
+            if right_type != wider_type:
+                node.rhs = Cast(node.rhs.token, node.rhs, right_type, wider_type)
+
+            node.type_id = wider_type
+            return node.type_id
+        else:
+            print(node)
+            raise Exception(f"implementation error: cannot analyze node: {node.kind} yet")

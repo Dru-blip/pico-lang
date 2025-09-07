@@ -1,12 +1,16 @@
-from enum import Enum, auto
+from enum import Enum
+
 
 class HirNodeTag(Enum):
     Block = "Block"
     FunctionBlock = "FunctionBlock"
     Return = "Return"
-    Log="Log",
-    BinOp="BinOp"
+    Log = "Log",
+    Cast = "Cast",
+    BoolCast = "BoolCast"
+    BinOp = "BinOp"
     ConstInt = "ConstInt"
+
 
 class HirNode:
     def __init__(self, kind: HirNodeTag, **data):
@@ -46,15 +50,23 @@ class Return(HirNode):
         super().__init__(HirNodeTag.Return, token=token, expr=expr)
         self.expr = expr
 
+
 class HirLog(HirNode):
     def __init__(self, token=None, expr=None):
         super().__init__(HirNodeTag.Log, token=token, expr=expr)
         self.expr = expr
 
 
+class Cast(HirNode):
+    def __init__(self, token, expr, from_type, to_type):
+        super().__init__(HirNodeTag.Cast, token=token, expr=expr)
+        self.from_type = from_type
+        self.to_type = to_type
+
+
 class BinOp(HirNode):
-    def __init__(self, token,op_tag,lhs,rhs):
-        super().__init__(HirNodeTag.BinOp,token=token,op_tag=op_tag,lhs=lhs,rhs=rhs)
+    def __init__(self, token, op_tag, lhs, rhs):
+        super().__init__(HirNodeTag.BinOp, token=token, op_tag=op_tag, lhs=lhs, rhs=rhs)
 
 
 class ConstInt(HirNode):

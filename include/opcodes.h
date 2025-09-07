@@ -15,6 +15,13 @@
 #define OP_ISHL 0x2A
 #define OP_ISHR 0x2B
 
+#define OP_IEQ    0x2C
+#define OP_INE    0x2D
+#define OP_ILT    0x2E
+#define OP_ILE    0x2F
+#define OP_IGT    0x30
+#define OP_IGE    0x31
+
 #define OP_RET 0x66
 
 #define OP_LOG 0x85
