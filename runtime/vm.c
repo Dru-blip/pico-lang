@@ -49,8 +49,28 @@ static void pico_run_frame(pico_frame *frame) {
             BINARY_INT_OP(%)
             break;
         }
+        case OP_IBAND: {
+            BINARY_INT_OP(&)
+            break;
+        }
+        case OP_IBOR: {
+            BINARY_INT_OP(|)
+            break;
+        }
+        case OP_IBXOR: {
+            BINARY_INT_OP(^)
+            break;
+        }
+        case OP_ISHL: {
+            BINARY_INT_OP(<<)
+            break;
+        }
+        case OP_ISHR: {
+            BINARY_INT_OP(>>)
+            break;
+        }
         case OP_LOG: {
-            const pico_value a=POP();
+            const pico_value a = POP();
             printf("%d\n", a.i_value);
             break;
         }

@@ -1,5 +1,3 @@
-
-
 from pico_ast import OpTag
 from hir import BinOp, FunctionBlock, HirBlock, ConstInt, Return, HirLog
 
@@ -13,6 +11,11 @@ OP_IDIV = 0x23
 OP_IREM = 0x24
 OP_IAND = 0x25
 OP_IOR = 0x26
+OP_IBAND = 0x27
+OP_IBOR = 0x28
+OP_IBXOR = 0x29
+OP_ISHL = 0x2A
+OP_ISHR = 0x2B
 
 # control flow
 OP_RET = 0x66
@@ -27,6 +30,11 @@ optag_to_opcode = {
     OpTag.MOD: OP_IREM,
     OpTag.AND: OP_IAND,
     OpTag.OR: OP_IOR,
+    OpTag.BAND: OP_IBAND,
+    OpTag.BOR: OP_IBOR,
+    OpTag.BXOR: OP_IBXOR,
+    OpTag.SHL: OP_ISHL,
+    OpTag.SHR: OP_ISHR,
 }
 
 

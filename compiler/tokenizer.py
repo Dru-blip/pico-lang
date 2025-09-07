@@ -32,9 +32,11 @@ class TokenTag(str, Enum):
     MODULUS_EQUAL = "MODULUS_EQUAL"
 
     LESS = "LESS"
+    LESS_LESS="LESS_LESS"
     LESS_EQUAL = "LESS_EQUAL"
 
     GREATER = "GREATER"
+    GREATER_GREATER = "GREATER_GREATER"
     GREATER_EQUAL = "GREATER_EQUAL"
 
     EQUAL = "EQUAL"
@@ -50,6 +52,8 @@ class TokenTag(str, Enum):
 
     SEMICOLON = "SEMICOLON"
     COMMA = "COMMA"
+
+    CARET="CARET"
 
     KW_FN = "KW_FN"
     KW_LOG="KW_LOG",
@@ -69,7 +73,6 @@ class Location:
     start: int
     end: int
 
-
 @dataclass
 class Token:
     tag: TokenTag
@@ -79,7 +82,6 @@ class Token:
 
     def __str__(self):
         return f'Token({self.tag}, "{self.value}", line={self.loc.line}, col={self.loc.col})'
-
 
 class Tokenizer:
     keywords: Dict[str, TokenTag] = {
@@ -216,6 +218,9 @@ class Tokenizer:
                 if self._check("="):
                     self._advance()
                     tok.tag = TokenTag.LESS_EQUAL
+                if self._check("<"):
+                    self._advance()
+                    tok.tag = TokenTag.LESS_LESS
                 else:
                     tok.tag = TokenTag.LESS
             case ">":
@@ -223,6 +228,9 @@ class Tokenizer:
                 if self._check("="):
                     self._advance()
                     tok.tag = TokenTag.GREATER_EQUAL
+                if self._check(">"):
+                    self._advance()
+                    tok.tag = TokenTag.GREATER_GREATER
                 else:
                     tok.tag = TokenTag.GREATER
             case "=":
@@ -256,6 +264,9 @@ class Tokenizer:
             case ",":
                 self._advance()
                 tok.tag = TokenTag.COMMA
+            case "^":
+                self._advance()
+                tok.tag = TokenTag.CARET
             case _:
                 if c.isdigit():
                     start = self.pos

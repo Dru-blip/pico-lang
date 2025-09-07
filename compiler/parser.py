@@ -40,12 +40,20 @@ class Parser:
             TokenTag.PIPE_PIPE: Operator(OperatorKind.Infix, 28, 29, OpTag.OR),
             TokenTag.AMPERSAND_AMPERSAND: Operator(OperatorKind.Infix, 30, 31, OpTag.AND),
 
-            TokenTag.EQUAL_EQUAL: Operator(OperatorKind.Infix, 45, 46, OpTag.EQ),
-            TokenTag.NOT_EQUAL: Operator(OperatorKind.Infix, 45, 46, OpTag.NEQ),
+            TokenTag.PIPE: Operator(OperatorKind.Infix, 34, 35, OpTag.BOR),
+            TokenTag.CARET: Operator(OperatorKind.Infix, 36, 37, OpTag.BXOR),
+            TokenTag.AMPERSAND: Operator(OperatorKind.Infix, 38, 39, OpTag.BAND),
+
+            TokenTag.EQUAL_EQUAL: Operator(OperatorKind.Infix, 40, 41, OpTag.EQ),
+            TokenTag.NOT_EQUAL: Operator(OperatorKind.Infix, 40, 41, OpTag.NEQ),
+
             TokenTag.LESS: Operator(OperatorKind.Infix, 45, 46, OpTag.LT),
             TokenTag.LESS_EQUAL: Operator(OperatorKind.Infix, 45, 46, OpTag.LTE),
             TokenTag.GREATER: Operator(OperatorKind.Infix, 45, 46, OpTag.GT),
             TokenTag.GREATER_EQUAL: Operator(OperatorKind.Infix, 45, 46, OpTag.GTE),
+
+            TokenTag.LESS_LESS: Operator(OperatorKind.Infix, 47, 48, OpTag.SHL),
+            TokenTag.GREATER_GREATER: Operator(OperatorKind.Infix, 47, 48, OpTag.SHR),
 
             TokenTag.PLUS: Operator(OperatorKind.Infix, 50, 51, OpTag.ADD),
             TokenTag.MINUS: Operator(OperatorKind.Infix, 50, 51, OpTag.SUB),
@@ -142,7 +150,6 @@ class Parser:
         expr = self._parse_expr()
         self._expect_token(TokenTag.SEMICOLON)
         return Log(main_token, expr)
-
 
     def _parse_expr(self, min_bp=0):
         lhs = self._parse_primary_expr()

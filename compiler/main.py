@@ -3,7 +3,7 @@ from ir import IrModule
 from parser import Parser
 
 if __name__ == '__main__':
-    program = Parser.parse("test.pco", "fn main()void{log 2+3;}")
+    program = Parser.parse("test.pco", "fn main()void{log 2>>3;}")
     block = HirGen(program).generate()
     module = IrModule()
 
