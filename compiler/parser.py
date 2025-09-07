@@ -10,19 +10,22 @@ from pico_ast import (
     NamedType,
     Param,
     Program,
-    Assignment,BinOp,
+    Assignment, BinOp,
 )
+
 
 class OperatorKind:
     Infix = "infix"
     Assign = "assign"
+
 
 class Operator:
     def __init__(self, kind, lbp, rbp, op_tag):
         self.kind = kind
         self.lbp = lbp
         self.rbp = rbp
-        self.op_tag=op_tag
+        self.op_tag = op_tag
+
 
 class Parser:
     def __init__(self, filename: str, source: str):
@@ -33,24 +36,23 @@ class Parser:
         self.current_token = self.tokens[0]
 
         self.operator_table = {
-            TokenTag.EQUAL: Operator(OperatorKind.Assign,1, 1, OpTag.ASSIGN),
-            TokenTag.PIPE_PIPE: Operator(OperatorKind.Infix,28, 29, OpTag.OR),
-            TokenTag.AMPERSAND_AMPERSAND: Operator(OperatorKind.Infix,30, 31, OpTag.AND),
+            # TokenTag.EQUAL: Operator(OperatorKind.Assign, 1, 1, OpTag.ASSIGN),
+            TokenTag.PIPE_PIPE: Operator(OperatorKind.Infix, 28, 29, OpTag.OR),
+            TokenTag.AMPERSAND_AMPERSAND: Operator(OperatorKind.Infix, 30, 31, OpTag.AND),
 
-            TokenTag.EQUAL_EQUAL: Operator(OperatorKind.Infix,45, 46, OpTag.EQ),
-            TokenTag.NOT_EQUAL: Operator(OperatorKind.Infix,45, 46, OpTag.NEQ),
-            TokenTag.LESS: Operator(OperatorKind.Infix,45, 46, OpTag.LT),
-            TokenTag.LESS_EQUAL: Operator(OperatorKind.Infix,45, 46, OpTag.LTE),
-            TokenTag.GREATER: Operator(OperatorKind.Infix,45, 46, OpTag.GT),
-            TokenTag.GREATER_EQUAL: Operator(OperatorKind.Infix,45, 46, OpTag.GTE),
+            TokenTag.EQUAL_EQUAL: Operator(OperatorKind.Infix, 45, 46, OpTag.EQ),
+            TokenTag.NOT_EQUAL: Operator(OperatorKind.Infix, 45, 46, OpTag.NEQ),
+            TokenTag.LESS: Operator(OperatorKind.Infix, 45, 46, OpTag.LT),
+            TokenTag.LESS_EQUAL: Operator(OperatorKind.Infix, 45, 46, OpTag.LTE),
+            TokenTag.GREATER: Operator(OperatorKind.Infix, 45, 46, OpTag.GT),
+            TokenTag.GREATER_EQUAL: Operator(OperatorKind.Infix, 45, 46, OpTag.GTE),
 
-            TokenTag.PLUS: Operator(OperatorKind.Infix,50, 51, OpTag.ADD),
-            TokenTag.MINUS: Operator(OperatorKind.Infix,50, 51, OpTag.SUB),
-            TokenTag.ASTERISK: Operator(OperatorKind.Infix,55, 56, OpTag.MUL),
-            TokenTag.SLASH: Operator(OperatorKind.Infix,55, 56, OpTag.DIV),
-            TokenTag.MODULUS: Operator(OperatorKind.Infix,55, 56, OpTag.MOD),
+            TokenTag.PLUS: Operator(OperatorKind.Infix, 50, 51, OpTag.ADD),
+            TokenTag.MINUS: Operator(OperatorKind.Infix, 50, 51, OpTag.SUB),
+            TokenTag.ASTERISK: Operator(OperatorKind.Infix, 55, 56, OpTag.MUL),
+            TokenTag.SLASH: Operator(OperatorKind.Infix, 55, 56, OpTag.DIV),
+            TokenTag.MODULUS: Operator(OperatorKind.Infix, 55, 56, OpTag.MOD),
         }
-
 
     @staticmethod
     def parse(filename, source):
@@ -141,9 +143,8 @@ class Parser:
                 break
             op_token = self._next_token()
             rhs = self._parse_expr(op_info.rbp)
-            lhs = BinOp(op_token,op_info.op_tag,lhs, rhs)
+            lhs = BinOp(op_token, op_info.op_tag, lhs, rhs)
         return lhs
-
 
     def _parse_primary_expr(self):
         token = self._next_token()

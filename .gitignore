@@ -8,5 +8,5 @@ compile_commands.json
 build
 .xmake
 .venv
-
 __pycache__
+*.pbc

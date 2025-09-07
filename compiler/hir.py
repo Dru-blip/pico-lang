@@ -4,8 +4,8 @@ class HirNodeTag(Enum):
     Block = "Block"
     FunctionBlock = "FunctionBlock"
     Return = "Return"
+    BinOp="BinOp"
     ConstInt = "ConstInt"
-
 
 class HirNode:
     def __init__(self, kind: HirNodeTag, **data):
@@ -44,6 +44,11 @@ class Return(HirNode):
     def __init__(self, token=None, expr=None):
         super().__init__(HirNodeTag.Return, token=token, expr=expr)
         self.expr = expr
+
+
+class BinOp(HirNode):
+    def __init__(self, token,op_tag,lhs,rhs):
+        super().__init__(HirNodeTag.BinOp,token=token,op_tag=op_tag,lhs=lhs,rhs=rhs)
 
 
 class ConstInt(HirNode):

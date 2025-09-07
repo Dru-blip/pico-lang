@@ -9,6 +9,14 @@
 #define READ_TWO_BYTES() (READ_OPCODE() | (READ_OPCODE() << 8))
 #define READ_CONSTANT() vm.constants[READ_TWO_BYTES()]
 
+#define PUSH(value) vm.stack[vm.sp++] = value;
+#define POP() vm.stack[vm.sp--]
+
+#define BINARY_INT_OP(op)                                                      \
+    const pico_value b = POP();                                                \
+    const pico_value a = POP();                                                \
+    vm.stack[vm.sp++] = TO_PICO_INT(a.i_value op b.i_value);
+
 static pico_vm vm;
 
 static void pico_run_frame(pico_frame *frame) {
@@ -17,7 +25,27 @@ static void pico_run_frame(pico_frame *frame) {
         const pbyte opcode = READ_OPCODE();
         switch (opcode) {
         case OP_LIC: {
-            vm.stack[vm.sp++] = READ_CONSTANT();
+            PUSH(READ_CONSTANT())
+            break;
+        }
+        case OP_IADD: {
+            BINARY_INT_OP(+)
+            break;
+        }
+        case OP_ISUB: {
+            BINARY_INT_OP(-)
+            break;
+        }
+        case OP_IMUL: {
+            BINARY_INT_OP(*)
+            break;
+        }
+        case OP_IDIV: {
+            BINARY_INT_OP(/)
+            break;
+        }
+        case OP_IREM: {
+            BINARY_INT_OP(%)
             break;
         }
         case OP_RET: {

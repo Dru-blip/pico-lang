@@ -38,7 +38,7 @@ bytecode_unit load_bytecode(const char *filename) {
             pint constant = value[0] | (value[1] << 8) | (value[2] << 16) |
                              (value[3] << 24);
 
-            arrput(constants, to_pico_int(constant));
+            arrput(constants, TO_PICO_INT(constant));
         } else if (tag == 0x02) {
             pbyte len_bytes[2];
             fread(&len_bytes, sizeof(pbyte), 2, file);
@@ -47,7 +47,7 @@ bytecode_unit load_bytecode(const char *filename) {
             pstr str = malloc(len + 1);
             fread(str, sizeof(pbyte), len, file);
             str[len] = '\0';
-            arrput(constants, to_pico_str(str, len));
+            arrput(constants, TO_PICO_STR(str, len));
         }
         constants_read++;
     }

@@ -1,7 +1,7 @@
 from typing import Optional
 from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Param, Block, Return, IntLiteral, Identifier, \
     NodeTag
-from hir import HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag
+from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag
 from pico_types import TypeRegistry
 from symtab import Symbol, SymbolKind
 
@@ -127,6 +127,8 @@ class HirGen:
             if not symbol:
                 raise Exception(f"Undeclared identifier {node.name}")
             return symbol
+        elif node.tag==NodeTag.BinOp:
+            return BinOp(node.token,node.op_tag,node.lhs,node.rhs)
         else:
             raise NotImplementedError(f"Expression {node.tag} not implemented")
 

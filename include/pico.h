@@ -3,8 +3,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define to_pico_int(value) ((pico_value){.kind = PICO_INT, .i_value = value})
-#define to_pico_str(str, len)                                                  \
+#define TO_PICO_INT(value) ((pico_value){.kind = PICO_INT, .i_value = value})
+#define TO_PICO_STR(str, len)                                                  \
     ((pico_value){.kind = PICO_STRING, .s_value = str, .size = len})
 
 typedef int32_t pint;

@@ -1,7 +1,30 @@
-from hir import FunctionBlock, HirBlock, ConstInt, Return
+from pico_ast import OpTag
+from hir import BinOp, FunctionBlock, HirBlock, ConstInt, Return
 
 OP_LIC = 0x05
+
+#arithmetic
+OP_IADD=0x20
+OP_ISUB=0x21
+OP_IMUL=0x22
+OP_IDIV=0x23
+OP_IREM=0x24
+OP_IAND=0x25
+OP_IOR=0x26
+
+#control flow
 OP_RET = 0x66
+
+
+optag_to_opcode={
+                OpTag.ADD:OP_IADD,
+                 OpTag.SUB:OP_ISUB,
+                 OpTag.MUL:OP_IMUL,
+                 OpTag.DIV:OP_IDIV,
+                 OpTag.MOD:OP_IREM,
+                 OpTag.AND:OP_IAND,
+                 OpTag.OR:OP_IOR,
+                }
 
 
 class FunctionIR:
@@ -35,6 +58,10 @@ class IrModule:
             code.append(OP_LIC)
             idx = self.get_const_index(expr.val)
             code += idx.to_bytes(2, "little")
+        if isinstance(expr,BinOp):
+            code+=self.compile_expr(expr.lhs)
+            code+=self.compile_expr(expr.rhs)
+            code.append(optag_to_opcode[expr.op_tag])
         return code
 
     def generate_bytecode_from_block(self, block: HirBlock) -> bytearray:

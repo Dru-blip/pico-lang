@@ -3,19 +3,18 @@ from typing import Any, Optional, List
 
 
 class OpTag:
-    ASSIGN = "ASSIGN"            
-    OR = "OR"                    
-    AND = "AND"                  
-    EQ = "EQ"                    
-    NEQ = "NEQ"                  
-    LT = "LT"                    
-    LTE = "LTE"                  
-    GT = "GT"                    
-    GTE = "GTE"                  
-    ADD = "ADD"                  
-    SUB = "SUB"                  
-    MUL = "MUL"                 
-    DIV = "DIV"                 
+    OR = "OR"
+    AND = "AND"
+    EQ = "EQ"
+    NEQ = "NEQ"
+    LT = "LT"
+    LTE = "LTE"
+    GT = "GT"
+    GTE = "GTE"
+    ADD = "ADD"
+    SUB = "SUB"
+    MUL = "MUL"
+    DIV = "DIV"
     MOD = "MOD"
 
 
@@ -24,15 +23,12 @@ class NodeTag(str, Enum):
 
     IntLiteral = "IntLiteral"
     Identifier = "Identifier"
-    
-    BinOp="BinOp"
+
+    BinOp = "BinOp"
 
     Not = "Not"
 
-    
-    Assignment="Assignment"
-    
-    
+    Assignment = "Assignment"
 
     Return = "Return"
     Block = "Block"
@@ -110,9 +106,11 @@ class Expr(Node):
     def __init__(self, tag: NodeTag, **props):
         super().__init__(tag, **props)
 
+
 class Assignment(Expr):
     def __init__(self, token, target, val):
         super().__init__(NodeTag.Assignment, token=token, target=target, val=val)
+
 
 class IntLiteral(Expr):
     def __init__(self, value: int):
