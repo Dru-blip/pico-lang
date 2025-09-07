@@ -1,5 +1,5 @@
 from pico_ast import OpTag
-from hir import BinOp, FunctionBlock, HirBlock, ConstInt, Return, HirLog, StoreLocal, VarRef
+from hir import BinOp, FunctionBlock, HirBlock, ConstInt, Return, HirLog, StoreLocal, VarRef, Branch
 
 OP_LIC = 0x05
 OP_ISTORE = 0x0A
@@ -27,6 +27,8 @@ OP_IGT = 0x30
 OP_IGE = 0x31
 
 # control flow
+OP_JF = 0x60
+OP_JMP = 0x62
 OP_RET = 0x66
 
 OP_LOG = 0x85
@@ -111,6 +113,23 @@ class IrModule:
                 code.append(OP_LOG)
             elif isinstance(node, HirBlock):
                 code += self.generate_bytecode_from_block(node)
+            elif isinstance(node, Branch):
+                code += self.compile_expr(node.condition)
+                code.append(OP_JF)
+                jmp_patch = len(code)
+                code.append(0x00)
+                code.append(0x00)
+                code += self.generate_bytecode_from_block(node.then_block)
+                if node.else_block:
+                    code.append(OP_JMP)
+                    merge_patch = len(code)
+                    code.append(0x00)
+                    code.append(0x00)
+                    code[jmp_patch:jmp_patch + 2] = len(code).to_bytes(2, "little")
+                    code += self.generate_bytecode_from_block(node.else_block)
+                    code[merge_patch:merge_patch + 2] = len(code).to_bytes(2, "little")
+                else:
+                    code[jmp_patch:jmp_patch + 2] = len(code).to_bytes(2, "little")
             else:
                 code += self.compile_expr(node)
         return code

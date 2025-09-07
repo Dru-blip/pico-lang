@@ -32,6 +32,12 @@ class Sema:
         elif kind == HirNodeTag.Block:
             for stmt in node.nodes:
                 self._analyze_stmt(stmt)
+        elif kind == HirNodeTag.Branch:
+            # TODO: check if condition expr type is boolean else insert BoolCast
+            cond_type = self._analyze_expr(node.condition)
+            self._analyze_stmt(node.then_block)
+            if node.else_block:
+                self._analyze_stmt(node.else_block)
         elif kind == HirNodeTag.StoreLocal:
             type_id = self._analyze_expr(node.value)
             if not node.symbol.type:

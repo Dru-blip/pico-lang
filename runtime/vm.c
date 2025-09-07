@@ -126,6 +126,19 @@ static void pico_run_frame(pico_frame *frame) {
             printf("%d\n", a.i_value);
             break;
         }
+        case OP_JF: {
+            const pico_value a = POP();
+            if (!a.i_value) {
+                puint offset = READ_TWO_BYTES();
+                frame->ip = offset;
+            }
+            break;
+        }
+        case OP_JMP: {
+            puint offset = READ_TWO_BYTES();
+            frame->ip = offset;
+            break;
+        }
         case OP_RET: {
             return;
         }

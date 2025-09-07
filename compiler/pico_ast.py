@@ -3,6 +3,7 @@ from typing import Any, Optional, List
 
 
 class OpTag:
+    Assign = "Assign"
     OR = "OR"
     AND = "AND"
     EQ = "EQ"
@@ -35,6 +36,8 @@ class NodeTag(str, Enum):
     Not = "Not"
 
     Assignment = "Assignment"
+
+    If = "If"
 
     Return = "Return"
     ExprStmt = "ExprStmt"
@@ -106,6 +109,11 @@ class Stmt(Node):
         super().__init__(tag, **props)
 
 
+class IfStmt(Node):
+    def __init__(self, token, condition, then_stmt, else_stmt=None):
+        super().__init__(NodeTag.If, token=token, condition=condition, then_stmt=then_stmt, else_stmt=else_stmt)
+
+
 class Log(Stmt):
     def __init__(self, token, expr=None):
         super().__init__(NodeTag.Log, token=token, expr=expr)
@@ -132,8 +140,8 @@ class Expr(Node):
 
 
 class Assignment(Expr):
-    def __init__(self, token, target, val):
-        super().__init__(NodeTag.Assignment, token=token, target=target, val=val)
+    def __init__(self, token, op_tag, target, val):
+        super().__init__(NodeTag.Assignment, op_tag=op_tag, token=token, target=target, val=val)
 
 
 class IntLiteral(Expr):

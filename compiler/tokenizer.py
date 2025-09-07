@@ -90,7 +90,7 @@ class Token:
 class Tokenizer:
     keywords: Dict[str, TokenTag] = {
         "fn": TokenTag.KW_FN,
-        "let":TokenTag.KW_LET,
+        "let": TokenTag.KW_LET,
         "return": TokenTag.KW_RETURN,
         "log": TokenTag.KW_LOG,
         "if": TokenTag.KW_IF,

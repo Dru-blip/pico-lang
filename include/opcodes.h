@@ -24,6 +24,8 @@
 #define OP_IGT 0x30
 #define OP_IGE 0x31
 
+#define OP_JF 0x60
+#define OP_JMP 0x62
 #define OP_RET 0x66
 
 #define OP_LOG 0x85

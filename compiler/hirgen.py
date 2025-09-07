@@ -3,7 +3,7 @@ from typing import Optional
 from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Param, Block, Return, IntLiteral, Identifier, \
     NodeTag
 from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag, HirLog, StoreLocal, BlockTag, \
-    VarRef
+    VarRef, Branch
 from pico_types import TypeRegistry
 from symtab import Symbol, SymbolKind
 
@@ -139,6 +139,8 @@ class HirGen:
     def _generate_stmt(self, node):
         if node.tag == NodeTag.Block:
             self._generate_block(node)
+        elif node.tag == NodeTag.If:
+            self._generate_if_stmt(node)
         elif node.tag == NodeTag.Return:
             self._generate_return(node)
         elif node.tag == NodeTag.Log:
@@ -149,6 +151,52 @@ class HirGen:
             self.current_block.add_node(self._generate_expr(node.expr))
         else:
             raise NotImplementedError(f"Statement {node.tag} not implemented")
+
+    def _generate_if_stmt(self, node):
+        condition = self._generate_expr(node.condition)
+
+        # then block
+        self._begin_scope()
+        then_block = HirBlock(
+            HirNodeTag.Block,
+            BlockLabelGenerator.next("then"),
+            node.token,
+            BlockTag.Local,
+            self.scope_depth,
+            self.current_block,
+        )
+        self.current_block = then_block
+        self._generate_stmt(node.then_stmt)
+        self._end_scope()
+        self.current_block = self.current_block.parent
+
+        # else block (optional)
+        else_block = None
+        if node.else_stmt:
+            self._begin_scope()
+            else_block = HirBlock(
+                HirNodeTag.Block,
+                BlockLabelGenerator.next("else"),
+                node.token,
+                BlockTag.Local,
+                self.scope_depth,
+                self.current_block,
+            )
+            self.current_block = else_block
+            self._generate_stmt(node.else_stmt)
+            self._end_scope()
+            self.current_block = self.current_block.parent
+
+        # branch node
+        self.current_block.add_node(
+            Branch(
+                node.token,
+                condition,
+                then_block,
+                else_block,
+                BlockLabelGenerator.next("merge"),
+            )
+        )
 
     def _generate_block(self, node: Block):
         self._begin_scope()
@@ -187,6 +235,10 @@ class HirGen:
             lhs = self._generate_expr(node.lhs)
             rhs = self._generate_expr(node.rhs)
             return BinOp(node.token, node.op_tag, lhs, rhs)
+        elif node.tag == NodeTag.Assignment:
+            lhs = self._generate_expr(node.target)
+            rhs = self._generate_expr(node.val)
+            return StoreLocal(lhs.symbol.name, node.token, lhs.symbol, rhs)
         else:
             raise NotImplementedError(f"Expression {node.tag} not implemented")
 

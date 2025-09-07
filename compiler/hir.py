@@ -4,6 +4,8 @@ from enum import Enum
 class HirNodeTag(Enum):
     Block = "Block"
     FunctionBlock = "FunctionBlock"
+    Branch = "Branch"
+
     Return = "Return"
     Log = "Log",
     Cast = "Cast",
@@ -55,11 +57,24 @@ class HirBlock(HirNode):
 class FunctionBlock(HirBlock):
     def __init__(self, name: str, token=None, symbol=None,
                  type_id=0, parent=None, scope_depth=0):
-        super().__init__(HirNodeTag.FunctionBlock,name=name,token=token, parent=parent, scope_depth=scope_depth,block_tag=BlockTag.Function)
+        super().__init__(HirNodeTag.FunctionBlock, name=name, token=token, parent=parent, scope_depth=scope_depth,
+                         block_tag=BlockTag.Function)
         self.kind = HirNodeTag.FunctionBlock
         self.symbol = symbol
         self.type_id = type_id
         self.local_count = 0
+
+
+class Branch(HirNode):
+    def __init__(self, token, condition, then_block, else_block, merge_label):
+        super().__init__(
+            HirNodeTag.Branch,
+            token=token,
+            condition=condition,
+            then_block=then_block,
+            else_block=else_block,
+            merge_label=merge_label,
+        )
 
 
 class Return(HirNode):
