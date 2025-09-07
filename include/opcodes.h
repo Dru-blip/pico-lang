@@ -10,3 +10,6 @@
 
 
 #define OP_RET 0x66
+
+
+#define OP_LOG 0x85

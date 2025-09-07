@@ -3,6 +3,7 @@
 #include "opcodes.h"
 #include "pico.h"
 #include "stb_ds.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 #define READ_OPCODE() frame->function->code[frame->ip++]
@@ -10,12 +11,12 @@
 #define READ_CONSTANT() vm.constants[READ_TWO_BYTES()]
 
 #define PUSH(value) vm.stack[vm.sp++] = value;
-#define POP() vm.stack[vm.sp--]
+#define POP() vm.stack[--vm.sp]
 
 #define BINARY_INT_OP(op)                                                      \
     const pico_value b = POP();                                                \
     const pico_value a = POP();                                                \
-    vm.stack[vm.sp++] = TO_PICO_INT(a.i_value op b.i_value);
+    PUSH(TO_PICO_INT(a.i_value op b.i_value));
 
 static pico_vm vm;
 
@@ -46,6 +47,11 @@ static void pico_run_frame(pico_frame *frame) {
         }
         case OP_IREM: {
             BINARY_INT_OP(%)
+            break;
+        }
+        case OP_LOG: {
+            const pico_value a=POP();
+            printf("%d\n", a.i_value);
             break;
         }
         case OP_RET: {

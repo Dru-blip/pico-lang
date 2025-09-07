@@ -1,7 +1,7 @@
 from typing import Optional
 from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Param, Block, Return, IntLiteral, Identifier, \
     NodeTag
-from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag
+from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag, HirLog
 from pico_types import TypeRegistry
 from symtab import Symbol, SymbolKind
 
@@ -101,6 +101,8 @@ class HirGen:
             self._generate_block(node)
         elif node.tag == NodeTag.Return:
             self._generate_return(node)
+        elif node.tag == NodeTag.Log:
+            self._generate_log(node)
         else:
             raise NotImplementedError(f"Statement {node.tag} not implemented")
 
@@ -119,6 +121,10 @@ class HirGen:
         expr = self._generate_expr(node.expr)
         self.current_block.add_node(HirReturn(node.token, expr))
 
+    def _generate_log(self, node: HirLog):
+        expr = self._generate_expr(node.expr)
+        self.current_block.add_node(HirLog(node.token, expr))
+
     def _generate_expr(self, node):
         if node.tag == NodeTag.IntLiteral:
             return ConstInt(node.value)
@@ -128,7 +134,9 @@ class HirGen:
                 raise Exception(f"Undeclared identifier {node.name}")
             return symbol
         elif node.tag==NodeTag.BinOp:
-            return BinOp(node.token,node.op_tag,node.lhs,node.rhs)
+            lhs=self._generate_expr(node.lhs)
+            rhs=self._generate_expr(node.rhs)
+            return BinOp(node.token,node.op_tag,lhs,rhs)
         else:
             raise NotImplementedError(f"Expression {node.tag} not implemented")
 

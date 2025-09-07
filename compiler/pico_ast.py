@@ -31,6 +31,7 @@ class NodeTag(str, Enum):
     Assignment = "Assignment"
 
     Return = "Return"
+    Log="Log",
     Block = "Block"
 
     Param = "Param"
@@ -91,6 +92,9 @@ class Stmt(Node):
     def __init__(self, tag: NodeTag, **props):
         super().__init__(tag, **props)
 
+class Log(Stmt):
+    def __init__(self, token, expr=None):
+        super().__init__(NodeTag.Log, token=token, expr=expr)
 
 class Return(Stmt):
     def __init__(self, token, expr=None):

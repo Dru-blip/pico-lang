@@ -52,6 +52,7 @@ class TokenTag(str, Enum):
     COMMA = "COMMA"
 
     KW_FN = "KW_FN"
+    KW_LOG="KW_LOG",
     KW_RETURN = "KW_RETURN"
     KW_IF = "KW_IF"
     KW_ELSE = "KW_ELSE"
@@ -84,6 +85,7 @@ class Tokenizer:
     keywords: Dict[str, TokenTag] = {
         "fn": TokenTag.KW_FN,
         "return": TokenTag.KW_RETURN,
+        "log": TokenTag.KW_LOG,
         "if": TokenTag.KW_IF,
         "else": TokenTag.KW_ELSE,
         "while": TokenTag.KW_WHILE,

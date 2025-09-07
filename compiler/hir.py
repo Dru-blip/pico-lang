@@ -4,6 +4,7 @@ class HirNodeTag(Enum):
     Block = "Block"
     FunctionBlock = "FunctionBlock"
     Return = "Return"
+    Log="Log",
     BinOp="BinOp"
     ConstInt = "ConstInt"
 
@@ -43,6 +44,11 @@ class FunctionBlock(HirBlock):
 class Return(HirNode):
     def __init__(self, token=None, expr=None):
         super().__init__(HirNodeTag.Return, token=token, expr=expr)
+        self.expr = expr
+
+class HirLog(HirNode):
+    def __init__(self, token=None, expr=None):
+        super().__init__(HirNodeTag.Log, token=token, expr=expr)
         self.expr = expr
 
 

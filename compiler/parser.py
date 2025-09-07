@@ -10,7 +10,7 @@ from pico_ast import (
     NamedType,
     Param,
     Program,
-    Assignment, BinOp,
+    Assignment, BinOp, Log,
 )
 
 
@@ -126,6 +126,8 @@ class Parser:
             return self._parse_return()
         elif self._check(TokenTag.LBRACE):
             return self._parse_block()
+        elif self._check(TokenTag.KW_LOG):
+            return self._parse_log()
         else:
             raise SyntaxError(f"unexpected token in statement: {self.current_token.tag}")
 
@@ -134,6 +136,13 @@ class Parser:
         expr = self._parse_expr()
         self._expect_token(TokenTag.SEMICOLON)
         return Return(main_token, expr)
+
+    def _parse_log(self):
+        main_token = self._next_token()
+        expr = self._parse_expr()
+        self._expect_token(TokenTag.SEMICOLON)
+        return Log(main_token, expr)
+
 
     def _parse_expr(self, min_bp=0):
         lhs = self._parse_primary_expr()
