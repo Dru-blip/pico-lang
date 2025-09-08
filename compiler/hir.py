@@ -5,7 +5,10 @@ class HirNodeTag(Enum):
     Block = "Block"
     FunctionBlock = "FunctionBlock"
     Branch = "Branch"
+    LoopBlock = "LoopBlock"
 
+    Break = "Break"
+    Continue = "Continue"
     Return = "Return"
     Log = "Log",
     Cast = "Cast",
@@ -14,6 +17,7 @@ class HirNodeTag(Enum):
     StoreLocal = "StoreLocal"
     BinOp = "BinOp"
     ConstInt = "ConstInt"
+    Call = "Call"
 
 
 class BlockTag(Enum):
@@ -55,14 +59,28 @@ class HirBlock(HirNode):
 
 
 class FunctionBlock(HirBlock):
-    def __init__(self, name: str, token=None, symbol=None,
+    def __init__(self, function_id: int, name: str, token=None, symbol=None,
                  type_id=0, parent=None, scope_depth=0):
         super().__init__(HirNodeTag.FunctionBlock, name=name, token=token, parent=parent, scope_depth=scope_depth,
                          block_tag=BlockTag.Function)
+        self.function_id = function_id
         self.kind = HirNodeTag.FunctionBlock
         self.symbol = symbol
         self.type_id = type_id
         self.local_count = 0
+
+
+class LoopBlock(HirBlock):
+    def __init__(self, name: str, loop_id: int, token=None, parent=None, scope_depth=0):
+        super().__init__(HirNodeTag.LoopBlock,
+                         name=name,
+                         token=token,
+                         parent=parent,
+                         scope_depth=scope_depth,
+                         block_tag=BlockTag.Local
+                         )
+        self.loop_id = loop_id
+        self.kind = HirNodeTag.LoopBlock
 
 
 class Branch(HirNode):
@@ -83,6 +101,18 @@ class Return(HirNode):
         self.expr = expr
 
 
+class Continue(HirNode):
+    def __init__(self, token=None, loop_id=-1):
+        super().__init__(HirNodeTag.Continue, token=token)
+        self.loop_id = loop_id
+
+
+class Break(HirNode):
+    def __init__(self, token=None, loop_id=-1):
+        super().__init__(HirNodeTag.Break, token=token)
+        self.loop_id = loop_id
+
+
 class StoreLocal(HirNode):
     def __init__(self, name, token, symbol, value):
         super().__init__(HirNodeTag.StoreLocal, token=token, name=name, symbol=symbol, value=value)
@@ -98,12 +128,16 @@ class HirLog(HirNode):
         super().__init__(HirNodeTag.Log, token=token, expr=expr)
         self.expr = expr
 
-
 class Cast(HirNode):
     def __init__(self, token, expr, from_type, to_type):
         super().__init__(HirNodeTag.Cast, token=token, expr=expr)
         self.from_type = from_type
         self.to_type = to_type
+
+
+class Call(HirNode):
+    def __init__(self, token, calle, args):
+        super().__init__(HirNodeTag.Call, token=token, calle=calle, args=args)
 
 
 class BinOp(HirNode):

@@ -63,6 +63,7 @@ class TokenTag(str, Enum):
     KW_IF = "KW_IF"
     KW_ELSE = "KW_ELSE"
     KW_WHILE = "KW_WHILE"
+    KW_LOOP = "KW_LOOP"
     KW_BREAK = "KW_BREAK"
     KW_CONTINUE = "KW_CONTINUE"
     KW_DO = "KW_DO"
@@ -96,6 +97,7 @@ class Tokenizer:
         "if": TokenTag.KW_IF,
         "else": TokenTag.KW_ELSE,
         "while": TokenTag.KW_WHILE,
+        "loop": TokenTag.KW_LOOP,
         "do": TokenTag.KW_DO,
         "break": TokenTag.KW_BREAK,
         "continue": TokenTag.KW_CONTINUE,

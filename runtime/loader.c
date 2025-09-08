@@ -52,6 +52,12 @@ bytecode_unit load_bytecode(const char *filename) {
         constants_read++;
     }
 
+    // main function index
+    pbyte main_function_index_bytes[2];
+    fread(&main_function_index_bytes, sizeof(pbyte), 2, file);
+    puint main_function_index =
+        main_function_index_bytes[0] | (main_function_index_bytes[1] << 8);
+
     // read functions
     pbyte num_functions_bytes[2];
     fread(&num_functions_bytes, sizeof(pbyte), 2, file);
@@ -59,12 +65,22 @@ bytecode_unit load_bytecode(const char *filename) {
         num_functions_bytes[0] | (num_functions_bytes[1] << 8);
 
     pico_function *functions = nullptr;
+    arrsetlen(functions, num_functions);
 
     for (puint i = 0; i < num_functions; i++) {
+        // read function index
+        pbyte index_bytes[2];
+        fread(&index_bytes, sizeof(pbyte), 2, file);
+        puint function_index = index_bytes[0] | (index_bytes[1] << 8);
+
         // read function name id
         pbyte name_id_bytes[2];
         fread(&name_id_bytes, sizeof(pbyte), 2, file);
         puint name_id = name_id_bytes[0] | (name_id_bytes[1] << 8);
+
+        pbyte param_bytes[2];
+        fread(&param_bytes, sizeof(pbyte), 2, file);
+        puint param_count = param_bytes[0] | (param_bytes[1] << 8);
 
         pbyte local_bytes[2];
         fread(&local_bytes, sizeof(pbyte), 2, file);
@@ -82,12 +98,14 @@ bytecode_unit load_bytecode(const char *filename) {
         pico_function function = {.code = code,
                                   .name_id = name_id,
                                   .code_len = code_len,
-                                  .local_count = local_count};
-        arrput(functions, function);
+                                  .local_count = local_count,
+                                  .param_count = param_count};
+        functions[function_index] = function;
     }
 
     fclose(file);
     return (bytecode_unit){
+        .main_function_index = main_function_index,
         .constants = constants,
         .functions = functions,
     };

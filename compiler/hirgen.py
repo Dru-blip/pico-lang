@@ -1,9 +1,10 @@
 from typing import Optional
 
+from function_id import FunctionIdGenerator
 from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Param, Block, Return, IntLiteral, Identifier, \
     NodeTag
 from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag, HirLog, StoreLocal, BlockTag, \
-    VarRef, Branch
+    VarRef, Branch, LoopBlock, Continue, Break, Call
 from pico_types import TypeRegistry
 from symtab import Symbol, SymbolKind
 
@@ -36,6 +37,9 @@ class HirGen:
         self.current_block: Optional[HirBlock] = None
         self.scope_depth = 0
         self.var_id_counter = 0
+        self.loop_stack = []
+        self.loop_counter = 0
+        self.function_id_gen = FunctionIdGenerator.get_instance()
 
     def generate(self):
         for node in self.program.nodes:
@@ -53,7 +57,9 @@ class HirGen:
         func_symbol = self._gen_fn_prototype(node.proto, node.body is not None)
         if node.body:
             func_symbol.is_defined = True
+            func_symbol.function_id = self.function_id_gen.get_next_id()
             self.function_block = FunctionBlock(
+                func_symbol.function_id,
                 node.proto.name,
                 symbol=func_symbol,
                 type_id=func_symbol.type,
@@ -64,8 +70,11 @@ class HirGen:
 
             # Add parameters
             for index, param in enumerate(node.proto.params):
-                self.function_block.symbols[param.name] = Symbol(param.name, SymbolKind.Parameter, param.type,
-                                                                 self.scope_depth)
+                sym = Symbol(param.name, SymbolKind.Parameter, param.type,
+                             self.scope_depth)
+                self.function_block.symbols[param.name] = sym
+                sym.local_offset = self.function_block.local_count
+                self.function_block.local_count += 1
 
             self._generate_stmt(node.body)
             self.global_block.add_node(self.function_block)
@@ -94,6 +103,7 @@ class HirGen:
                 raise Exception(f"Function {proto.name} already defined")
 
         func_symbol = Symbol(proto.name, SymbolKind.Function, func_type_id, 0)
+        func_symbol.params = params
         func_symbol.is_defined = already_defined or has_body
         self.global_block.symbols[proto.name] = func_symbol
         return func_symbol
@@ -141,16 +151,46 @@ class HirGen:
             self._generate_block(node)
         elif node.tag == NodeTag.If:
             self._generate_if_stmt(node)
+        elif node.tag == NodeTag.LoopStmt:
+            self._generate_loop_stmt(node)
         elif node.tag == NodeTag.Return:
             self._generate_return(node)
         elif node.tag == NodeTag.Log:
             self._generate_log(node)
+        elif node.tag == NodeTag.Continue:
+            self._generate_continue(node)
+        elif node.tag == NodeTag.Break:
+            self._generate_break(node)
         elif node.tag == NodeTag.VarDecl:
             self._generate_var_decl(node)
         elif node.tag == NodeTag.ExprStmt:
             self.current_block.add_node(self._generate_expr(node.expr))
         else:
             raise NotImplementedError(f"Statement {node.tag} not implemented")
+
+    def _generate_loop_stmt(self, node):
+        self._begin_scope()
+        loop_id = self.loop_counter
+        self.loop_counter += 1
+        loop_block = LoopBlock(BlockLabelGenerator.next("loop"), loop_id, node.token, self.current_block,
+                               self.scope_depth)
+        self.current_block.add_node(loop_block)
+        self.current_block = loop_block
+        self.loop_stack.append(loop_id)
+        self._generate_stmt(node.body)
+        self.loop_stack.pop()
+        self._end_scope()
+        self.current_block = self.current_block.parent
+
+    def _generate_continue(self, node):
+        if len(self.loop_stack) == 0:
+            raise Exception("continue statement out of side")
+        self.current_block.add_node(Continue(node.token, self.loop_stack[-1]))
+
+    def _generate_break(self, node):
+        if len(self.loop_stack) == 0:
+            raise Exception("break statement out of side")
+        self.current_block.add_node(Break(node.token, self.loop_stack[-1]))
 
     def _generate_if_stmt(self, node):
         condition = self._generate_expr(node.condition)
@@ -211,7 +251,9 @@ class HirGen:
         self.current_block = block.parent
 
     def _generate_return(self, node: Return):
-        expr = self._generate_expr(node.expr)
+        expr = None
+        if node.expr:
+            expr = self._generate_expr(node.expr)
         self.current_block.add_node(HirReturn(node.token, expr))
 
     def _generate_log(self, node: HirLog):
@@ -239,6 +281,12 @@ class HirGen:
             lhs = self._generate_expr(node.target)
             rhs = self._generate_expr(node.val)
             return StoreLocal(lhs.symbol.name, node.token, lhs.symbol, rhs)
+        elif node.tag == NodeTag.Call:
+            calle = self._generate_expr(node.calle)
+            args = []
+            for arg in node.args:
+                args.append(self._generate_expr(arg))
+            return Call(node.token, calle, args)
         else:
             raise NotImplementedError(f"Expression {node.tag} not implemented")
 

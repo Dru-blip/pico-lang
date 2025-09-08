@@ -10,13 +10,14 @@ from pico_ast import (
     NamedType,
     Param,
     Program,
-    Assignment, BinOp, Log, VarDecl, ExprStmt, IfStmt,
+    Assignment, BinOp, Log, VarDecl, ExprStmt, IfStmt, LoopStmt, Continue, Break, Call,
 )
 
 
 class OperatorKind:
     Infix = "infix"
     Assign = "assign"
+    Postfix = "postfix"
 
 
 class Operator:
@@ -61,6 +62,8 @@ class Parser:
             TokenTag.ASTERISK: Operator(OperatorKind.Infix, 55, 56, OpTag.MUL, BinOp),
             TokenTag.SLASH: Operator(OperatorKind.Infix, 55, 56, OpTag.DIV, BinOp),
             TokenTag.MODULUS: Operator(OperatorKind.Infix, 55, 56, OpTag.MOD, BinOp),
+
+            TokenTag.LPAREN: Operator(OperatorKind.Postfix, 99, 100, OpTag.Call, Call),
         }
 
     @staticmethod
@@ -148,11 +151,22 @@ class Parser:
             return self._parse_variable_decl()
         elif self._check(TokenTag.KW_IF):
             return self._parse_if_stmt()
+        elif self._check(TokenTag.KW_LOOP):
+            return self._parse_loop_stmt()
+        elif self._check(TokenTag.KW_CONTINUE):
+            return self._parse_continue()
+        elif self._check(TokenTag.KW_BREAK):
+            return self._parse_break()
         else:
             main_token = self.current_token
             expr = self._parse_expr()
             self._expect_token(TokenTag.SEMICOLON)
             return ExprStmt(main_token, expr)
+
+    def _parse_loop_stmt(self):
+        main_token = self._next_token()
+        body = self._parse_block()
+        return LoopStmt(main_token, body)
 
     def _parse_block(self):
         main_token = self._expect_token(TokenTag.LBRACE)
@@ -174,9 +188,21 @@ class Parser:
             else_stmt = self._parse_stmt()
         return IfStmt(main_token, condition, then_stmt, else_stmt)
 
+    def _parse_continue(self):
+        main = self._next_token()
+        self._expect_token(TokenTag.SEMICOLON)
+        return Continue(main)
+
+    def _parse_break(self):
+        main = self._next_token()
+        self._expect_token(TokenTag.SEMICOLON)
+        return Break(main)
+
     def _parse_return(self):
         main_token = self._next_token()
-        expr = self._parse_expr()
+        expr = None
+        if not self._check(TokenTag.SEMICOLON):
+            expr = self._parse_expr()
         self._expect_token(TokenTag.SEMICOLON)
         return Return(main_token, expr)
 
@@ -192,10 +218,30 @@ class Parser:
             op_info = self.operator_table.get(self.current_token.tag)
             if not op_info or op_info.lbp < min_bp:
                 break
+            if op_info.kind == OperatorKind.Postfix:
+                lhs = self._parse_postfix_expr(op_info.op_tag, lhs)
+                continue
             op_token = self._next_token()
             rhs = self._parse_expr(op_info.rbp)
             lhs = op_info.node(op_token, op_info.op_tag, lhs, rhs)
         return lhs
+
+    def _parse_postfix_expr(self, op_tag, lhs):
+        main_token = self.current_token
+        if op_tag == OpTag.Call:
+            self._advance()
+            args = self._parse_call_args()
+            return Call(main_token, lhs, args)
+        return None
+
+    def _parse_call_args(self):
+        args = []
+        while not self._check(TokenTag.RPAREN):
+            args.append(self._parse_expr())
+            if self._check(TokenTag.COMMA):
+                self._advance()
+        self._advance()
+        return args
 
     def _parse_primary_expr(self):
         token = self._next_token()

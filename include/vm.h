@@ -15,6 +15,7 @@ typedef struct pico_vm {
     pico_value stack[PICO_MAX_STACK];
     pico_value *constants;
     pico_function *functions;
+    puint main_function_index;
 } pico_vm;
 
 void pico_vm_init(bytecode_unit *unit);

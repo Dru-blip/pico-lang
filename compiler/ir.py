@@ -1,5 +1,6 @@
-from pico_ast import OpTag
-from hir import BinOp, FunctionBlock, HirBlock, ConstInt, Return, HirLog, StoreLocal, VarRef, Branch
+from pico_ast import OpTag, Continue, Break
+from hir import BinOp, FunctionBlock, HirBlock, ConstInt, Return, HirLog, StoreLocal, VarRef, Branch, LoopBlock, \
+    HirNodeTag
 
 OP_LIC = 0x05
 OP_ISTORE = 0x0A
@@ -30,6 +31,7 @@ OP_IGE = 0x31
 OP_JF = 0x60
 OP_JMP = 0x62
 OP_RET = 0x66
+OP_CALL = 0x68
 
 OP_LOG = 0x85
 
@@ -57,14 +59,18 @@ optag_to_opcode = {
 
 
 class FunctionIR:
-    def __init__(self, name_idx: int, local_count: int, bytecode: bytes):
+    def __init__(self, function_id: int, name_idx: int, local_count: int, param_count: int, bytecode: bytes):
+        self.function_id = function_id
         self.name_idx = name_idx
         self.bytecode = bytecode
         self.local_count = local_count
+        self.param_count = param_count
 
     def serialize(self) -> bytes:
         result = bytearray()
+        result += self.function_id.to_bytes(2, "little")
         result += self.name_idx.to_bytes(2, "little")
+        result += self.param_count.to_bytes(2, "little")
         result += self.local_count.to_bytes(2, "little")
         result += len(self.bytecode).to_bytes(4, "little")
         result += self.bytecode
@@ -76,6 +82,9 @@ class IrModule:
         self.const_table = []
         self.const_index_map = {}
         self.functions = []
+        self.loop_start_indices = []
+        self.loop_break_patches = []
+        self.main_function_index = 0
 
     def get_const_index(self, value) -> int:
         if value not in self.const_index_map:
@@ -83,62 +92,100 @@ class IrModule:
             self.const_table.append(value)
         return self.const_index_map[value]
 
-    def compile_expr(self, expr) -> bytearray:
-        code = bytearray()
-        if isinstance(expr, ConstInt):
+    def compile_expr(self, expr, code: bytearray):
+        if expr.kind == HirNodeTag.ConstInt:
             code.append(OP_LIC)
             idx = self.get_const_index(expr.val)
             code += idx.to_bytes(2, "little")
-        if isinstance(expr, VarRef):
+
+        elif expr.kind == HirNodeTag.VarRef:
             code.append(OP_ILOAD)
             code += expr.symbol.local_offset.to_bytes(2, "little")
-        if isinstance(expr, BinOp):
-            code += self.compile_expr(expr.lhs)
-            code += self.compile_expr(expr.rhs)
-            code.append(optag_to_opcode[expr.op_tag])
-        return code
 
-    def generate_bytecode_from_block(self, block: HirBlock) -> bytearray:
-        code = bytearray()
+        elif expr.kind == HirNodeTag.BinOp:
+            self.compile_expr(expr.lhs, code)
+            self.compile_expr(expr.rhs, code)
+            code.append(optag_to_opcode[expr.op_tag])
+        elif expr.kind == HirNodeTag.Call:
+            for arg in expr.args:
+                self.compile_expr(arg, code)
+            code.append(OP_CALL)
+            code += expr.calle.symbol.function_id.to_bytes(2, "little")
+        else:
+            raise ValueError(f"Unsupported expression kind: {expr.kind}")
+
+    def generate_bytecode_from_block(self, block: HirBlock, code: bytearray):
         for node in block.nodes:
-            if isinstance(node, Return):
-                code += self.compile_expr(node.expr)
+            if node.kind == HirNodeTag.Return:
+                if node.expr:
+                    self.compile_expr(node.expr, code)
                 code.append(OP_RET)
-            elif isinstance(node, StoreLocal):
-                code += self.compile_expr(node.value)
+
+            elif node.kind == HirNodeTag.StoreLocal:
+                self.compile_expr(node.value, code)
                 code.append(OP_ISTORE)
                 code += node.symbol.local_offset.to_bytes(2, "little")
-            elif isinstance(node, HirLog):
-                code += self.compile_expr(node.expr)
+
+            elif node.kind == HirNodeTag.Log:
+                self.compile_expr(node.expr, code)
                 code.append(OP_LOG)
-            elif isinstance(node, HirBlock):
-                code += self.generate_bytecode_from_block(node)
-            elif isinstance(node, Branch):
-                code += self.compile_expr(node.condition)
+
+            elif node.kind == HirNodeTag.Continue:
+                code.append(OP_JMP)
+                code += self.loop_start_indices[-1].to_bytes(2, "little")
+
+            elif node.kind == HirNodeTag.Break:
+                code.append(OP_JMP)
+                self.loop_break_patches[-1].append(len(code))
+                code += b"\x00\x00"
+
+            elif node.kind == HirNodeTag.Branch:
+                self.compile_expr(node.condition, code)
                 code.append(OP_JF)
                 jmp_patch = len(code)
-                code.append(0x00)
-                code.append(0x00)
-                code += self.generate_bytecode_from_block(node.then_block)
+                code += b"\x00\x00"
+
+                self.generate_bytecode_from_block(node.then_block, code)
+
                 if node.else_block:
                     code.append(OP_JMP)
                     merge_patch = len(code)
-                    code.append(0x00)
-                    code.append(0x00)
+                    code += b"\x00\x00"
                     code[jmp_patch:jmp_patch + 2] = len(code).to_bytes(2, "little")
-                    code += self.generate_bytecode_from_block(node.else_block)
+
+                    self.generate_bytecode_from_block(node.else_block, code)
                     code[merge_patch:merge_patch + 2] = len(code).to_bytes(2, "little")
                 else:
                     code[jmp_patch:jmp_patch + 2] = len(code).to_bytes(2, "little")
+
+            elif node.kind == HirNodeTag.LoopBlock:
+                self.loop_start_indices.append(len(code))
+                self.loop_break_patches.append([])
+
+                self.generate_bytecode_from_block(node, code)
+
+                code.append(OP_JMP)
+                code += self.loop_start_indices[-1].to_bytes(2, "little")
+
+                break_patches = self.loop_break_patches.pop()
+                loop_end_idx = len(code)
+                for patch_idx in break_patches:
+                    code[patch_idx:patch_idx + 2] = loop_end_idx.to_bytes(2, "little")
+
+                self.loop_start_indices.pop()
+
+            elif node.kind in (HirNodeTag.Block, HirNodeTag.FunctionBlock):
+                self.generate_bytecode_from_block(node, code)
+
             else:
-                code += self.compile_expr(node)
-        return code
+                self.compile_expr(node, code)
 
     def add_function(self, func: FunctionBlock):
         name_idx = self.get_const_index(func.name)
-
-        bytecode = self.generate_bytecode_from_block(func)
-        self.functions.append(FunctionIR(name_idx, func.local_count, bytecode))
+        self.main_function_index = func.function_id if func.name == "main" else self.main_function_index
+        code = bytearray()
+        self.generate_bytecode_from_block(func, code)
+        self.functions.append(FunctionIR(func.function_id, name_idx, func.local_count, len(func.symbol.params), code))
 
     def emit(self) -> bytes:
         result = bytearray()
@@ -159,6 +206,7 @@ class IrModule:
             else:
                 raise ValueError(f"Unsupported constant type: {type(c)}")
 
+        result += self.main_function_index.to_bytes(2, "little")
         result += len(self.functions).to_bytes(2, "little")
         for f in self.functions:
             result += f.serialize()

@@ -9,6 +9,7 @@ class Symbol:
         self.name = name
         self.kind = kind
         self.type = type_id
+        self.function_id = 0  # only for function symbol,will later filled in by sema or hirgen
         self.local_offset = 0  # for local variables
         self.scope_depth = scope_depth
         self.params = []  # for functions

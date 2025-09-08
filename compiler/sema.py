@@ -21,15 +21,19 @@ class Sema:
     def _analyze_stmt(self, node):
         kind = node.kind
         if kind == HirNodeTag.Return:
-            ret_type = self.type_registry.get_ret_type(node.func_type)
-            val_type = self._analyze_expr(node.expr)
-            # TODO: check for type compatibility for cast
-            if val_type != ret_type:
-                node.expr = Cast(node.token, node.expr, val_type, ret_type)
-            node.type_id = ret_type
+            # ret_type = self.type_registry.get_ret_type(node.func_type)
+            # if node.expr:
+            #     val_type = self._analyze_expr(node.expr)
+            #     # TODO: check for type compatibility for cast
+            #     if val_type != ret_type:
+            #         node.expr = Cast(node.token, node.expr, val_type, ret_type)
+            node.type_id = TypeRegistry.VoidType
         elif kind == HirNodeTag.Log:
             self._analyze_expr(node.expr)
         elif kind == HirNodeTag.Block:
+            for stmt in node.nodes:
+                self._analyze_stmt(stmt)
+        elif kind == HirNodeTag.LoopBlock:
             for stmt in node.nodes:
                 self._analyze_stmt(stmt)
         elif kind == HirNodeTag.Branch:
@@ -42,6 +46,8 @@ class Sema:
             type_id = self._analyze_expr(node.value)
             if not node.symbol.type:
                 node.symbol.type = type_id
+        elif kind == HirNodeTag.Break or kind == HirNodeTag.Continue:
+            pass
         else:
             self._analyze_expr(node)
 
@@ -76,6 +82,13 @@ class Sema:
 
             node.type_id = wider_type
             return node.type_id
+        elif kind == HirNodeTag.Call:
+            if node.calle.kind != HirNodeTag.VarRef:
+                raise Exception("Uncallable expression")
+            for arg in node.args:
+                # TODO: check for type compatibility of args
+                arg_type = self._analyze_expr(arg)
+            return self.type_registry.get_ret_type(node.calle.symbol.type)
         else:
             print(node)
             raise Exception(f"implementation error: cannot analyze node: {node.kind} yet")

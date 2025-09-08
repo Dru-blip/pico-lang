@@ -6,10 +6,15 @@ OUTDIR  := out
 PICO_BIN := $(OUTDIR)/pico
 PICO_SRCS := $(wildcard runtime/*.c)
 
+PICOC_BIN=$(OUTDIR)/picoc
+
 all: $(PICO_BIN)
 
 $(PICO_BIN): outdir
 	$(CC) $(CFLAGS) -o $@ $(PICO_SRCS)
+
+compiler: compiler/main.py
+	pyinstaller --onefile $< --name picoc
 
 runtime: $(PICO_BIN)
 
@@ -18,3 +23,5 @@ outdir:
 
 clean:
 	rm -rf $(OUTDIR)
+
+.PHONY : all clean compiler runtime

@@ -31,7 +31,8 @@
 static pico_vm vm;
 
 static void pico_run_frame(pico_frame *frame) {
-    const pulong code_len = frame->function->code_len;
+frame_start:
+    pulong code_len = frame->function->code_len;
     while (frame->ip < code_len) {
         const pbyte opcode = READ_OPCODE();
         switch (opcode) {
@@ -139,14 +140,36 @@ static void pico_run_frame(pico_frame *frame) {
             frame->ip = offset;
             break;
         }
+        case OP_CALL: {
+            puint function_index = READ_TWO_BYTES();
+            pico_function *function = &vm.functions[function_index];
+            pico_frame child_frame =
+                PICO_FRAME_NEW(function, &vm.stack[vm.sp], frame);
+            vm.frames[vm.fc++] = child_frame;
+            frame = &child_frame;
+            for (pint i = function->param_count - 1; i >= 0; i--) {
+                frame->locals[i] = POP();
+            }
+            goto frame_start;
+        }
         case OP_RET: {
-            return;
+            if (frame->parent) {
+                pico_frame *child_frame = frame;
+                frame = frame->parent;
+                --vm.fc;
+                PICO_FRAME_DEINIT(*child_frame);
+                goto frame_start;
+            }
+            goto end;
         }
         }
     }
+
+end:;
 }
 
 void pico_vm_init(bytecode_unit *unit) {
+    vm.main_function_index = unit->main_function_index;
     vm.constants = unit->constants;
     vm.fc = 0;
     vm.functions = unit->functions;
@@ -155,10 +178,10 @@ void pico_vm_init(bytecode_unit *unit) {
 
 void pico_vm_run() {
     // get the main function
-    pico_function *main_func = &vm.functions[0];
+    pico_function *main_func = &vm.functions[vm.main_function_index];
 
     // push the main function onto the call stack
-    pico_frame frame = PICO_FRAME_NEW(main_func, &vm.stack[vm.sp]);
+    pico_frame frame = PICO_FRAME_NEW(main_func, &vm.stack[vm.sp], nullptr);
     vm.frames[vm.fc++] = frame;
     pico_run_frame(&frame);
     PICO_FRAME_DEINIT(frame);

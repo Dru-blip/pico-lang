@@ -24,6 +24,8 @@ class OpTag:
     SHL = "SHL"
     SHR = "SHR"
 
+    Call = "Call"
+
 
 class NodeTag(str, Enum):
     NamedType = "NamedType"
@@ -36,9 +38,13 @@ class NodeTag(str, Enum):
     Not = "Not"
 
     Assignment = "Assignment"
+    Call = "Call"
 
     If = "If"
+    LoopStmt = "LoopStmt"
 
+    Break = "Break"
+    Continue = "Continue"
     Return = "Return"
     ExprStmt = "ExprStmt"
     Log = "Log",
@@ -109,6 +115,11 @@ class Stmt(Node):
         super().__init__(tag, **props)
 
 
+class LoopStmt(Stmt):
+    def __init__(self, token, body):
+        super().__init__(NodeTag.LoopStmt, token=token, body=body)
+
+
 class IfStmt(Node):
     def __init__(self, token, condition, then_stmt, else_stmt=None):
         super().__init__(NodeTag.If, token=token, condition=condition, then_stmt=then_stmt, else_stmt=else_stmt)
@@ -124,6 +135,16 @@ class Return(Stmt):
         super().__init__(NodeTag.Return, token=token, expr=expr)
 
 
+class Break(Stmt):
+    def __init__(self, token):
+        super().__init__(NodeTag.Break, token=token)
+
+
+class Continue(Stmt):
+    def __init__(self, token):
+        super().__init__(NodeTag.Continue, token=token)
+
+
 class ExprStmt(Stmt):
     def __init__(self, token, expr=None):
         super().__init__(NodeTag.ExprStmt, token=token, expr=expr)
@@ -137,6 +158,11 @@ class Block(Stmt):
 class Expr(Node):
     def __init__(self, tag: NodeTag, **props):
         super().__init__(tag, **props)
+
+
+class Call(Expr):
+    def __init__(self, token, calle, args: List[Expr]):
+        super().__init__(NodeTag.Call, token=token, calle=calle, args=args)
 
 
 class Assignment(Expr):
