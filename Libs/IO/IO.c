@@ -4,20 +4,20 @@
 #define IO_FN(name) IO_##name
 
 PICO_EXPORT pico_value IO_FN(putchar)(pico_env *env, pico_value *args) {
-    pint ch = AS_INT(args);
+    pint ch = PICO_POP_INT(env->vm);
     putchar(ch);
     return TO_PICO_INT(ch);
 }
 
 PICO_EXPORT pico_value IO_FN(print_int)(pico_env *env, pico_value *args) {
-    pint ch = AS_INT(args);
+    pint ch = PICO_POP_INT(env->vm);
     printf("%d\n", ch);
     return TO_PICO_INT(ch);
 }
 
 PICO_EXPORT pico_value IO_FN(puts)(pico_env *env, pico_value *args) {
-    pico_value str = args[0];
-    printf("%s\n", str.s_value);
+    pstr str = PICO_POP_STR(env->vm);
+    printf("%s\n", str);
     return TO_PICO_INT(0);
 }
 

@@ -1,13 +1,18 @@
 from enum import Enum
+from typing import List
+
+from symtab import Symbol
 
 
 class HirNodeTag(Enum):
     Block = "Block"
+    Module = "Module"
     FunctionBlock = "FunctionBlock"
     Branch = "Branch"
     LoopBlock = "LoopBlock"
     ExternLibBlock = "ExternLibBlock"
 
+    StaticAccess = "StaticAccess"
     Break = "Break"
     Continue = "Continue"
     Return = "Return"
@@ -27,6 +32,7 @@ class BlockTag(Enum):
     Global = "Global"
     Function = "Function"
     Local = "Local"
+    Module = "Module"
 
 
 class HirNode:
@@ -61,10 +67,20 @@ class HirBlock(HirNode):
         return None
 
 
-class HirExternalLibBlock(HirNode):
-    def __init__(self, token, lib_prefix, symbols):
-        super().__init__(HirNodeTag.ExternLibBlock, lib_prefix=lib_prefix, token=token,
-                         symbols=symbols)
+class HirModule(HirBlock):
+    def __init__(self, name, token, parent=None, scope_depth=0):
+        super().__init__(HirNodeTag.Module, name=name, token=token, parent=parent, scope_depth=scope_depth,
+                         block_tag=BlockTag.Module)
+
+
+class HirExternalLibBlock(HirModule):
+    def __init__(self, token, lib_prefix, symbol, symbols: List[Symbol]):
+        super().__init__(name=lib_prefix, token=token)
+        self.kind = HirNodeTag.ExternLibBlock
+        self.symbol = symbol
+        for symbol in symbols:
+            self.add_symbol(symbol)
+        self.symbol.blockRef = self
 
 
 class FunctionBlock(HirBlock):
@@ -150,9 +166,15 @@ class BoolCast(HirNode):
         super().__init__(HirNodeTag.Cast, token=token, expr=expr)
 
 
+class StaticAccess(HirNode):
+    def __init__(self, token, qualifier, name):
+        super().__init__(HirNodeTag.StaticAccess, token=token, qualifier=qualifier, name=name)
+
+
 class Call(HirNode):
     def __init__(self, token, calle, args):
         super().__init__(HirNodeTag.Call, token=token, calle=calle, args=args)
+        self.function_symbol = None  # filled by sema
 
 
 class BinOp(HirNode):

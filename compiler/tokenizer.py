@@ -54,6 +54,7 @@ class TokenTag(str, Enum):
     SEMICOLON = "SEMICOLON"
     COMMA = "COMMA"
     COLON = "COLON",
+    COLON_COLON = "COLON_COLON"
 
     CARET = "CARET"
     AT = "AT"
@@ -284,7 +285,11 @@ class Tokenizer:
                 tok.tag = TokenTag.CARET
             case ":":
                 self._advance()
-                tok.tag = TokenTag.COLON
+                if self._check(":"):
+                    self._advance()
+                    tok.tag = TokenTag.COLON_COLON
+                else:
+                    tok.tag = TokenTag.COLON
             case "@":
                 self._advance()
                 tok.tag = TokenTag.AT

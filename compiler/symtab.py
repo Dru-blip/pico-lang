@@ -5,6 +5,7 @@ class SymbolKind:
     Variable = "Variable"
     Function = "Function"
     Parameter = "Parameter"
+    Module = "Module"
 
 
 class Linkage(Enum):
@@ -25,6 +26,7 @@ class Symbol:
         self.lib_prefix = None  # filled in hirgen
         self.linkage = Linkage.Internal  # for functions
         self.lib_name = None
+        self.blockRef = None  # for modules
 
         # assign any extra attributes
         for k, v in extra.items():

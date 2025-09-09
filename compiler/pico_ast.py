@@ -1,8 +1,6 @@
 from enum import Enum
 from typing import Any, Optional, List
 
-from tokenizer import Token
-
 
 class OpTag:
     Assign = "Assign"
@@ -27,6 +25,7 @@ class OpTag:
     SHR = "SHR"
 
     Call = "Call"
+    StaticAccess = "StaticAccess"
 
 
 class NodeTag(str, Enum):
@@ -43,6 +42,8 @@ class NodeTag(str, Enum):
 
     Assignment = "Assignment"
     Call = "Call"
+
+    StaticAccess = "StaticAccess"
 
     If = "If"
     LoopStmt = "LoopStmt"
@@ -173,6 +174,11 @@ class Block(Stmt):
 class Expr(Node):
     def __init__(self, tag: NodeTag, **props):
         super().__init__(tag, **props)
+
+
+class StaticAccess(Expr):
+    def __init__(self, token, qualifier, name):
+        super().__init__(NodeTag.StaticAccess, token=token, qualifier=qualifier, name=name)
 
 
 class Call(Expr):

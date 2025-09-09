@@ -19,7 +19,6 @@
 #define OP_IBXOR 0x29
 #define OP_ISHL 0x2A
 #define OP_ISHR 0x2B
-
 #define OP_IEQ 0x2C
 #define OP_INE 0x2D
 #define OP_ILT 0x2E

@@ -3,6 +3,7 @@ from hir import Cast, HirNodeTag, BoolCast
 from pico_ast import OpTag
 from pico_error import PicoError
 from pico_types import TypeRegistry
+from symtab import Symbol
 
 
 class Sema:
@@ -115,10 +116,21 @@ class Sema:
             raise Exception(f"implementation error: cannot analyze node: {node.kind} yet")
 
     def _analyze_call(self, node):
-        if node.calle.kind != HirNodeTag.VarRef:
+        if node.calle.kind != HirNodeTag.VarRef and node.calle.kind != HirNodeTag.StaticAccess:
             raise PicoError("Uncallable expression", node.token)
+
+        if node.calle.kind == HirNodeTag.VarRef:
+            function_symbol = node.calle.symbol
+            params = function_symbol.params
+            return_type = self.type_registry.get_ret_type(function_symbol.type)
+        else:
+            qualifier_symbol: Symbol = node.calle.qualifier.symbol
+            function_symbol = qualifier_symbol.blockRef.resolve(node.calle.name.symbol.name)
+            params = function_symbol.params
+            return_type = self.type_registry.get_ret_type(function_symbol.type)
+
         new_args = []
-        for arg, param in zip(node.args, node.calle.symbol.params):
+        for arg, param in zip(node.args, params):
             arg_type = self._analyze_expr(arg)
             result_type = self.type_registry.get_assignment_type(param.type,
                                                                  arg_type)
@@ -130,9 +142,9 @@ class Sema:
             if arg_type != result_type:
                 arg = Cast(arg.token, arg, arg_type, result_type)
             new_args.append(arg)
-
+        node.function_symbol = function_symbol
         node.args = new_args
-        return self.type_registry.get_ret_type(node.calle.symbol.type)
+        return return_type
 
     def _analyze_binop(self, node):
         left_type = self._analyze_expr(node.lhs)

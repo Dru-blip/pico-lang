@@ -4,7 +4,7 @@ from function_id import FunctionIdGenerator
 from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Param, Block, Return, IntLiteral, Identifier, \
     NodeTag
 from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag, HirLog, StoreLocal, BlockTag, \
-    VarRef, Branch, LoopBlock, Continue, Break, Call, HirExternalLibBlock, ConstStr, ConstBool
+    VarRef, Branch, LoopBlock, Continue, Break, Call, HirExternalLibBlock, ConstStr, ConstBool, StaticAccess
 from pico_error import PicoError
 from pico_types import TypeRegistry
 from symtab import Symbol, SymbolKind, Linkage
@@ -60,7 +60,9 @@ class HirGen:
                 symbol = self._gen_fn_prototype(decl, has_body=False, linkage=Linkage.External)
                 symbol.lib_prefix = node.lib_prefix
                 symbols.append(symbol)
-            self.global_block.add_node(HirExternalLibBlock(node.token, node.lib_prefix, symbols))
+            module_symbol = Symbol(node.lib_prefix, SymbolKind.Module, 0, self.scope_depth)
+            self.global_block.add_symbol(module_symbol)
+            self.global_block.add_node(HirExternalLibBlock(node.token, node.lib_prefix, module_symbol, symbols))
         else:
             self._gen_function(node)
 
@@ -150,9 +152,6 @@ class HirGen:
         self.current_block.add_symbol(symbol)
         value = self._generate_expr(node.init)
 
-        # self.current_block.add_node(
-        #     Alloca(symbol.name, type_id, symbol, node.token)
-        # )
         self.current_block.add_node(
             StoreLocal(symbol.name, node.token, symbol, value)
         )
@@ -304,6 +303,10 @@ class HirGen:
             for arg in node.args:
                 args.append(self._generate_expr(arg))
             return Call(node.token, calle, args)
+        elif node.tag == NodeTag.StaticAccess:
+            qualifier = self._generate_expr(node.qualifier)
+            name = self._generate_expr(node.name)
+            return StaticAccess(node.token, qualifier, name)
         else:
             raise NotImplementedError(f"Expression {node.tag} not implemented")
 

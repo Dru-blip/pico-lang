@@ -134,13 +134,14 @@ class IrModule:
         elif expr.kind == HirNodeTag.Call:
             for arg in expr.args:
                 self.compile_expr(arg, code)
-            if expr.calle.symbol.linkage == Linkage.External:
+            if expr.function_symbol.linkage == Linkage.External:
                 code.append(OP_CALL_EXTERN)
-                code += self.get_const_index(f"{expr.calle.symbol.lib_prefix}_{expr.calle.symbol.name}").to_bytes(2,
-                                                                                                                  "little")
+                code += self.get_const_index(f"{expr.function_symbol.lib_prefix}_{expr.function_symbol.name}").to_bytes(
+                    2,
+                    "little")
             else:
                 code.append(OP_CALL)
-                code += expr.calle.symbol.function_id.to_bytes(2, "little")
+                code += expr.function_symbol.function_id.to_bytes(2, "little")
         else:
             raise ValueError(f"Unsupported expression kind: {expr.kind}")
 
@@ -221,14 +222,14 @@ class IrModule:
         for node in block.nodes:
             if node.kind == HirNodeTag.ExternLibBlock:
                 extern_block = {
-                    "name": self.get_const_index(node.lib_prefix),
+                    "name": self.get_const_index(node.name),
                     "indices": []
                 }
                 for symbol in node.symbols:
                     extern_block["indices"].append(
-                        self.get_const_index(f"{symbol.lib_prefix}_{symbol.name}")
+                        self.get_const_index(f"{node.name}_{symbol}")
                     )
-                self.extern_lib_blocks[node.lib_prefix] = extern_block
+                self.extern_lib_blocks[node.name] = extern_block
             else:
                 self.add_function(node)
 

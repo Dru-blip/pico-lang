@@ -187,7 +187,7 @@ frame_start:
                 exit(EXIT_FAILURE);
             }
             pico_value result = entry->handle(env, frame->stack);
-            PUSH(vm, result);
+            // PUSH(vm, result);
             break;
         }
         case OP_RET: {

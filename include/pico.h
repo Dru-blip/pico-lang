@@ -17,6 +17,10 @@
     ((pico_value){.kind = PICO_STRING, .s_value = str, .size = len})
 
 #define AS_INT(pico_value) ((pico_value)->i_value)
+#define AS_STR(pico_value) ((pico_value)->s_value)
+
+#define PICO_POP_INT(vm_ptr) ((vm_ptr)->stack[--((vm_ptr)->sp)].i_value)
+#define PICO_POP_STR(vm_ptr) ((vm_ptr)->stack[--((vm_ptr)->sp)].s_value)
 
 #define PICO_MAX_FRAMES 512
 #define PICO_MAX_STACK 2048

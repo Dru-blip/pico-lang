@@ -12,7 +12,7 @@ from pico_ast import (
     Param,
     Program,
     Assignment, BinOp, Log, VarDecl, ExprStmt, IfStmt, LoopStmt, Continue, Break, Call, StrLiteral, ExternLibBlock,
-    BoolLiteral,
+    BoolLiteral, StaticAccess,
 )
 
 
@@ -65,6 +65,7 @@ class Parser:
             TokenTag.SLASH: Operator(OperatorKind.Infix, 55, 56, OpTag.DIV, BinOp),
             TokenTag.MODULUS: Operator(OperatorKind.Infix, 55, 56, OpTag.MOD, BinOp),
 
+            TokenTag.COLON_COLON: Operator(OperatorKind.Postfix, 97, 98, OpTag.StaticAccess, StaticAccess),
             TokenTag.LPAREN: Operator(OperatorKind.Postfix, 99, 100, OpTag.Call, Call),
         }
 
@@ -258,6 +259,10 @@ class Parser:
             self._advance()
             args = self._parse_call_args()
             return Call(main_token, lhs, args)
+        if op_tag == OpTag.StaticAccess:
+            self._advance()
+            name = self._parse_primary_expr()
+            return StaticAccess(main_token, lhs, name)
         return None
 
     def _parse_call_args(self):
