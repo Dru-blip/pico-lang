@@ -28,5 +28,7 @@
 #define OP_JMP 0x62
 #define OP_RET 0x66
 #define OP_CALL 0x68
+#define OP_CALL_EXTERN 0x6A
+
 
 #define OP_LOG 0x85

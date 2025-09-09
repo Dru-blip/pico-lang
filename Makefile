@@ -11,7 +11,7 @@ PICOC_BIN=$(OUTDIR)/picoc
 all: $(PICO_BIN)
 
 $(PICO_BIN): outdir
-	$(CC) $(CFLAGS) -o $@ $(PICO_SRCS)
+	$(CC) $(CFLAGS) -o $@ $(PICO_SRCS) -ldl
 
 compiler: compiler/main.py
 	pyinstaller --onefile $< --name picoc

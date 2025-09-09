@@ -1,6 +1,7 @@
 from pico_ast import OpTag, Continue, Break
 from hir import BinOp, FunctionBlock, HirBlock, ConstInt, Return, HirLog, StoreLocal, VarRef, Branch, LoopBlock, \
     HirNodeTag
+from symtab import Linkage
 
 OP_LIC = 0x05
 OP_ISTORE = 0x0A
@@ -32,6 +33,7 @@ OP_JF = 0x60
 OP_JMP = 0x62
 OP_RET = 0x66
 OP_CALL = 0x68
+OP_CALL_EXTERN = 0x6A
 
 OP_LOG = 0x85
 
@@ -84,6 +86,7 @@ class IrModule:
         self.functions = []
         self.loop_start_indices = []
         self.loop_break_patches = []
+        self.extern_lib_blocks: dict[str, dict[str, int | list[int]]] = {}
         self.main_function_index = 0
 
     def get_const_index(self, value) -> int:
@@ -109,8 +112,13 @@ class IrModule:
         elif expr.kind == HirNodeTag.Call:
             for arg in expr.args:
                 self.compile_expr(arg, code)
-            code.append(OP_CALL)
-            code += expr.calle.symbol.function_id.to_bytes(2, "little")
+            if expr.calle.symbol.linkage == Linkage.External:
+                code.append(OP_CALL_EXTERN)
+                code += self.get_const_index(f"{expr.calle.symbol.lib_prefix}_{expr.calle.symbol.name}").to_bytes(2,
+                                                                                                                  "little")
+            else:
+                code.append(OP_CALL)
+                code += expr.calle.symbol.function_id.to_bytes(2, "little")
         else:
             raise ValueError(f"Unsupported expression kind: {expr.kind}")
 
@@ -187,6 +195,21 @@ class IrModule:
         self.generate_bytecode_from_block(func, code)
         self.functions.append(FunctionIR(func.function_id, name_idx, func.local_count, len(func.symbol.params), code))
 
+    def build(self, block):
+        for node in block.nodes:
+            if node.kind == HirNodeTag.ExternLibBlock:
+                extern_block = {
+                    "name": self.get_const_index(node.libname),
+                    "indices": []
+                }
+                for symbol in node.symbols:
+                    extern_block["indices"].append(
+                        self.get_const_index(f"{symbol.lib_prefix}_{symbol.name}")
+                    )
+                self.extern_lib_blocks[node.libname] = extern_block
+            else:
+                self.add_function(node)
+
     def emit(self) -> bytes:
         result = bytearray()
 
@@ -210,4 +233,13 @@ class IrModule:
         result += len(self.functions).to_bytes(2, "little")
         for f in self.functions:
             result += f.serialize()
+
+        result += len(self.extern_lib_blocks).to_bytes(2, "little")
+        for key in self.extern_lib_blocks:
+            block = self.extern_lib_blocks[key]
+            result += len(block["indices"]).to_bytes(2, "little")
+            result += block["name"].to_bytes(2, "little")
+            for idx in block["indices"]:
+                result += idx.to_bytes(2, "little")
+
         return result

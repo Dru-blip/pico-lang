@@ -4,9 +4,9 @@ from function_id import FunctionIdGenerator
 from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Param, Block, Return, IntLiteral, Identifier, \
     NodeTag
 from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag, HirLog, StoreLocal, BlockTag, \
-    VarRef, Branch, LoopBlock, Continue, Break, Call
+    VarRef, Branch, LoopBlock, Continue, Break, Call, HirExternalLibBlock
 from pico_types import TypeRegistry
-from symtab import Symbol, SymbolKind
+from symtab import Symbol, SymbolKind, Linkage
 
 
 class BlockLabelGenerator:
@@ -43,7 +43,7 @@ class HirGen:
 
     def generate(self):
         for node in self.program.nodes:
-            self._gen_function(node)
+            self._gen_decl(node)
         return self.global_block
 
     def _begin_scope(self):
@@ -51,6 +51,18 @@ class HirGen:
 
     def _end_scope(self):
         self.scope_depth -= 1
+
+    def _gen_decl(self, node):
+        if node.tag == NodeTag.ExternLibBlock:
+            symbols = []
+            for decl in node.decls:
+                symbol = self._gen_fn_prototype(decl, has_body=False, linkage=Linkage.External)
+                symbol.lib_prefix = node.lib_prefix
+                symbol.lib_name = node.libname
+                symbols.append(symbol)
+            self.global_block.add_node(HirExternalLibBlock(node.token, node.libname, node.lib_prefix, symbols))
+        else:
+            self._gen_function(node)
 
     def _gen_function(self, node: FunctionDeclaration):
         self._begin_scope()
@@ -82,7 +94,7 @@ class HirGen:
             self.current_block = None
         self._end_scope()
 
-    def _gen_fn_prototype(self, proto: FunctionPrototype, has_body: bool):
+    def _gen_fn_prototype(self, proto: FunctionPrototype, has_body: bool = True, linkage: Linkage = Linkage.Internal):
         # Transform return type
         return_type_id = self._transform_type(proto.returnType)
         params = []
@@ -104,6 +116,7 @@ class HirGen:
 
         func_symbol = Symbol(proto.name, SymbolKind.Function, func_type_id, 0)
         func_symbol.params = params
+        func_symbol.linkage = linkage
         func_symbol.is_defined = already_defined or has_body
         self.global_block.symbols[proto.name] = func_symbol
         return func_symbol

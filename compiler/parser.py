@@ -10,7 +10,7 @@ from pico_ast import (
     NamedType,
     Param,
     Program,
-    Assignment, BinOp, Log, VarDecl, ExprStmt, IfStmt, LoopStmt, Continue, Break, Call,
+    Assignment, BinOp, Log, VarDecl, ExprStmt, IfStmt, LoopStmt, Continue, Break, Call, StrLiteral, ExternLibBlock,
 )
 
 
@@ -98,8 +98,35 @@ class Parser:
     def parse_nodes(self):
         nodes = []
         while self.current_token.tag != TokenTag.EOF:
-            nodes.append(self._parse_function_declaration())
+            nodes.append(self._parse_decl())
         return nodes
+
+    def _parse_decl(self):
+        if self._check(TokenTag.KW_EXTERN):
+            return self._parse_extern_lib_block()
+
+        if self._check(TokenTag.KW_FN):
+            return self._parse_function_declaration()
+
+        raise Exception("invalid syntax : unknown decl")
+
+    def _parse_extern_lib_block(self):
+        main_token = self._next_token()
+        decls = []
+        self._expect_token(TokenTag.AT)
+        self._expect_token(TokenTag.ID)
+        self._expect_token(TokenTag.EQUAL)
+        libname = self._expect_token(TokenTag.STR_LIT).value
+        self._expect_token(TokenTag.AT)
+        self._expect_token(TokenTag.ID)
+        self._expect_token(TokenTag.EQUAL)
+        lib_prefix = self._expect_token(TokenTag.STR_LIT).value
+        self._expect_token(TokenTag.LBRACE)
+        while not self._check(TokenTag.RBRACE):
+            decls.append(self._parse_function_proto())
+            self._expect_token(TokenTag.SEMICOLON)
+        self._expect_token(TokenTag.RBRACE)
+        return ExternLibBlock(main_token, libname, lib_prefix, decls)
 
     def _parse_function_declaration(self):
         proto = self._parse_function_proto()
@@ -247,6 +274,8 @@ class Parser:
         token = self._next_token()
         if token.tag == TokenTag.INT_LIT:
             return IntLiteral(int(token.value))
+        elif token.tag == TokenTag.STR_LIT:
+            return StrLiteral(token.value)
         elif token.tag == TokenTag.ID:
             return Identifier(token.value, token)
         else:

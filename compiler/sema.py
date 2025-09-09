@@ -1,5 +1,4 @@
 # semantic analyzer
-
 from hir import Cast, HirNodeTag
 from pico_ast import OpTag
 from pico_types import TypeRegistry
@@ -12,6 +11,8 @@ class Sema:
 
     def analyze(self):
         for node in self.block.nodes:
+            if node.kind==HirNodeTag.ExternLibBlock:
+                continue
             self._analyze_function_block(node)
 
     def _analyze_function_block(self, fb):
@@ -60,6 +61,7 @@ class Sema:
         elif kind == HirNodeTag.BinOp:
             left_type = self._analyze_expr(node.lhs)
             right_type = self._analyze_expr(node.rhs)
+            # TODO: check for type compatibility
             if node.op_tag in [OpTag.AND, OpTag.OR]:
                 if left_type == TypeRegistry.BoolType and left_type != right_type:
                     raise Exception(f"Error: both operand types should be boolean for logical operators")
@@ -85,6 +87,7 @@ class Sema:
         elif kind == HirNodeTag.Call:
             if node.calle.kind != HirNodeTag.VarRef:
                 raise Exception("Uncallable expression")
+            # TODO: check for argument count matches with function param count
             for arg in node.args:
                 # TODO: check for type compatibility of args
                 arg_type = self._analyze_expr(arg)

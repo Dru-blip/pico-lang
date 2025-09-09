@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import Enum
 from dataclasses import dataclass
 from typing import List, Dict
 
@@ -9,6 +9,7 @@ class TokenTag(str, Enum):
     ID = "ID"
     INT_LIT = "INT_LIT"
     LONG_LIT = "LONG_LIT"
+    STR_LIT = "STR_LIT"
 
     LPAREN = "LPAREN"
     RPAREN = "RPAREN"
@@ -55,6 +56,7 @@ class TokenTag(str, Enum):
     COLON = "COLON",
 
     CARET = "CARET"
+    AT = "AT"
 
     KW_FN = "KW_FN"
     KW_LET = "KW_LET"
@@ -67,6 +69,7 @@ class TokenTag(str, Enum):
     KW_BREAK = "KW_BREAK"
     KW_CONTINUE = "KW_CONTINUE"
     KW_DO = "KW_DO"
+    KW_EXTERN = "KW_EXTERN"
 
 
 @dataclass
@@ -100,6 +103,7 @@ class Tokenizer:
         "loop": TokenTag.KW_LOOP,
         "do": TokenTag.KW_DO,
         "break": TokenTag.KW_BREAK,
+        "extern": TokenTag.KW_EXTERN,
         "continue": TokenTag.KW_CONTINUE,
     }
 
@@ -277,6 +281,47 @@ class Tokenizer:
             case ":":
                 self._advance()
                 tok.tag = TokenTag.COLON
+            case "@":
+                self._advance()
+                tok.tag = TokenTag.AT
+            case '"':
+                self._advance()
+                value_chars = []
+
+                while True:
+                    c = self._current()
+                    if c == '"':
+                        self._advance()
+                        break
+                    elif c == "\\":
+                        self._advance()
+                        esc = self._current()
+                        if esc == "n":
+                            value_chars.append("\n")
+                        elif esc == "t":
+                            value_chars.append("\t")
+                        elif esc == "r":
+                            value_chars.append("\r")
+                        elif esc == "\\":
+                            value_chars.append("\\")
+                        elif esc == '"':
+                            value_chars.append('"')
+                        else:
+                            raise ValueError(
+                                f"Unknown escape sequence '\\{esc}' "
+                                f"at line {self.line}, col {self.col}"
+                            )
+                        self._advance()
+                    elif c == "\0":
+                        raise ValueError(
+                            f"Unterminated string literal starting at line {self.line}, col {self.col}"
+                        )
+                    else:
+                        value_chars.append(c)
+                        self._advance()
+
+                tok.tag = TokenTag.STR_LIT
+                tok.value = "".join(value_chars)
             case _:
                 if c.isdigit():
                     start = self.pos

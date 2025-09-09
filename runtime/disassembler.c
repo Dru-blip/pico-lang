@@ -1,4 +1,3 @@
-#include "disassembler.h"
 #include "opcodes.h"
 #include "pico.h"
 #include "stb_ds.h"
@@ -65,6 +64,7 @@ static const opcode_info opcode_table[] = {
     {OP_JMP, "Jmp", 2, print_operand_two},
     {OP_RET, "Ret", 0, NULL},
     {OP_CALL, "Call", 2, print_operand_two},
+    {OP_CALL_EXTERN, "CallExtern", 2, print_operand_two},
     {OP_LOG, "Log", 0, NULL},
 
     {0xFF, "unknown", 0, NULL} // sentinel

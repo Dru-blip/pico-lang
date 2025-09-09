@@ -32,6 +32,7 @@ class NodeTag(str, Enum):
 
     IntLiteral = "IntLiteral"
     Identifier = "Identifier"
+    StrLiteral = "StrLiteral"
 
     BinOp = "BinOp"
 
@@ -54,6 +55,7 @@ class NodeTag(str, Enum):
     VarDecl = "VarDecl"
     FunctionDeclaration = "FunctionDeclaration"
     FunctionPrototype = "FunctionPrototype"
+    ExternLibBlock = "ExternLibBlock"
 
 
 class Node:
@@ -102,6 +104,17 @@ class FunctionDeclaration(Decl):
             NodeTag.FunctionDeclaration,
             proto=proto,
             body=body
+        )
+
+
+class ExternLibBlock(Decl):
+    def __init__(self, token, libname: str, lib_prefix: str, decls: List[Decl]):
+        super().__init__(
+            NodeTag.ExternLibBlock,
+            token=token,
+            libname=libname,
+            lib_prefix=lib_prefix,
+            decls=decls,
         )
 
 
@@ -173,6 +186,11 @@ class Assignment(Expr):
 class IntLiteral(Expr):
     def __init__(self, value: int):
         super().__init__(NodeTag.IntLiteral, value=value)
+
+
+class StrLiteral(Expr):
+    def __init__(self, value: str):
+        super().__init__(NodeTag.StrLiteral, value=value)
 
 
 class Identifier(Expr):

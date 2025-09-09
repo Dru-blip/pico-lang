@@ -20,17 +20,15 @@ def main(filename: str):
     block = HirGen(program).generate()
     Sema(block).analyze()
     module = IrModule()
-    #
-    for fb in block.nodes:
-        module.add_function(fb)
-    #
+    module.build(block)
     binary = module.emit()
 
-    print("Global Constant Table:", module.const_table)
-    print("Binary:", list(binary))
+    # print("Global Constant Table:", module.const_table)
+    # print("Binary:", list(binary))
     with open("out.pbc", "wb") as f:
         f.write(binary)
 
 
 if __name__ == '__main__':
+    # main("test.pco")
     typer.run(main)

@@ -1,8 +1,9 @@
-fn add(int a,int b) int {
-    return a+b;
+extern @lib="libpico_io" @prefix="IO" {
+    fn putchar(int c) int;
+    fn print_int(int c)void;
 }
 
 fn main()void{
-    let a=add(1,2);
+    print_int(65);
     return;
 }

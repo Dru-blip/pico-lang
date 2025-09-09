@@ -1,7 +1,15 @@
+from enum import Enum
+
+
 class SymbolKind:
     Variable = "Variable"
     Function = "Function"
     Parameter = "Parameter"
+
+
+class Linkage(Enum):
+    External = "External"
+    Internal = "Internal"
 
 
 class Symbol:
@@ -14,6 +22,9 @@ class Symbol:
         self.scope_depth = scope_depth
         self.params = []  # for functions
         self.is_defined = False  # for functions
+        self.lib_prefix = None  # filled in hirgen,
+        self.linkage = Linkage.Internal  # for functions
+        self.lib_name = None
 
         # assign any extra attributes
         for k, v in extra.items():

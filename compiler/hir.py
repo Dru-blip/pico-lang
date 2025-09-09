@@ -1,4 +1,5 @@
 from enum import Enum
+from pdb import line_prefix
 
 
 class HirNodeTag(Enum):
@@ -6,6 +7,7 @@ class HirNodeTag(Enum):
     FunctionBlock = "FunctionBlock"
     Branch = "Branch"
     LoopBlock = "LoopBlock"
+    ExternLibBlock = "ExternLibBlock"
 
     Break = "Break"
     Continue = "Continue"
@@ -56,6 +58,12 @@ class HirBlock(HirNode):
                 return symbol
             temp = temp.parent
         return None
+
+
+class HirExternalLibBlock(HirNode):
+    def __init__(self, token, libname, lib_prefix, symbols):
+        super().__init__(HirNodeTag.ExternLibBlock, libname=libname, lib_prefix=lib_prefix, token=token,
+                         symbols=symbols)
 
 
 class FunctionBlock(HirBlock):
@@ -127,6 +135,7 @@ class HirLog(HirNode):
     def __init__(self, token=None, expr=None):
         super().__init__(HirNodeTag.Log, token=token, expr=expr)
         self.expr = expr
+
 
 class Cast(HirNode):
     def __init__(self, token, expr, from_type, to_type):

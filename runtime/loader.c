@@ -1,4 +1,4 @@
-#include "loader.h"
+
 #include "pico.h"
 #include "stb_ds.h"
 #include <stdio.h>
@@ -101,6 +101,32 @@ bytecode_unit load_bytecode(const char *filename) {
                                   .local_count = local_count,
                                   .param_count = param_count};
         functions[function_index] = function;
+    }
+
+    // read extern libs
+    pbyte lib_count[2];
+    fread(&lib_count, sizeof(pbyte), 2, file);
+    puint num_libs = lib_count[0] | (lib_count[1] << 8);
+
+    for (puint i = 0; i < num_libs; i++) {
+        // lib name
+        pbyte name_index_bytes[2];
+        fread(&name_index_bytes, sizeof(pbyte), 2, file);
+        puint name_index = name_index_bytes[0] | (name_index_bytes[1] << 8);
+
+        // functions count
+        pbyte lib_function_bytes[2];
+        fread(&lib_function_bytes, sizeof(pbyte), 2, file);
+        puint lib_fuctions_count =
+            lib_function_bytes[0] | (lib_function_bytes[1] << 8);
+
+        for (puint j = 0; j < lib_fuctions_count; j++) {
+            pbyte lib_function_name_bytes[2];
+            fread(&lib_function_name_bytes, sizeof(pbyte), 2, file);
+            // function name index
+            puint lib_function_name_index =
+                lib_function_name_bytes[0] | (lib_function_name_bytes[1] << 8);
+        }
     }
 
     fclose(file);
