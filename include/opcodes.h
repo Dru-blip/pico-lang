@@ -1,6 +1,9 @@
 #pragma once
 
 #define OP_LIC 0x05
+#define OP_LSC 0x06
+#define OP_LBT 0x07
+#define OP_LBF 0x08
 #define OP_ISTORE 0x0A
 #define OP_ILOAD 0x0B
 
@@ -24,11 +27,15 @@
 #define OP_IGT 0x30
 #define OP_IGE 0x31
 
+#define OP_L2B 0x5B
+#define OP_L2I 0x5C
+#define OP_I2L 0x5D
+#define OP_I2B 0x5E
+
 #define OP_JF 0x60
 #define OP_JMP 0x62
 #define OP_RET 0x66
 #define OP_CALL 0x68
 #define OP_CALL_EXTERN 0x6A
-
 
 #define OP_LOG 0x85

@@ -70,6 +70,8 @@ class TokenTag(str, Enum):
     KW_CONTINUE = "KW_CONTINUE"
     KW_DO = "KW_DO"
     KW_EXTERN = "KW_EXTERN"
+    KW_TRUE = "KW_TRUE",
+    KW_FALSE = "KW_FALSE"
 
 
 @dataclass
@@ -105,6 +107,8 @@ class Tokenizer:
         "break": TokenTag.KW_BREAK,
         "extern": TokenTag.KW_EXTERN,
         "continue": TokenTag.KW_CONTINUE,
+        "true": TokenTag.KW_TRUE,
+        "false": TokenTag.KW_FALSE,
     }
 
     def __init__(self, source: str, filename: str):

@@ -1,9 +1,11 @@
-extern @lib="libpico_io" @prefix="IO" {
+extern @prefix="IO" {
     fn putchar(int c) int;
     fn print_int(int c)void;
+    fn puts(str c)void;
 }
 
 fn main()void{
-    print_int(65);
+    let a="hello";
+    puts(a);
     return;
 }

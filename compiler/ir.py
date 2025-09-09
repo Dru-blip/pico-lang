@@ -1,13 +1,16 @@
-from pico_ast import OpTag, Continue, Break
-from hir import BinOp, FunctionBlock, HirBlock, ConstInt, Return, HirLog, StoreLocal, VarRef, Branch, LoopBlock, \
-    HirNodeTag
+from pico_ast import OpTag
+from hir import FunctionBlock, HirBlock, HirNodeTag
 from symtab import Linkage
 
+# data
 OP_LIC = 0x05
+OP_LSC = 0x06
+OP_LBT = 0x07
+OP_LBF = 0x08
 OP_ISTORE = 0x0A
 OP_ILOAD = 0x0B
 
-# arithmetic
+# integer arithmetic
 OP_IADD = 0x20
 OP_ISUB = 0x21
 OP_IMUL = 0x22
@@ -27,6 +30,12 @@ OP_ILT = 0x2E
 OP_ILE = 0x2F
 OP_IGT = 0x30
 OP_IGE = 0x31
+
+# casting
+OP_L2B = 0x5B
+OP_L2I = 0x5C
+OP_I2L = 0x5D
+OP_I2B = 0x5E
 
 # control flow
 OP_JF = 0x60
@@ -58,6 +67,9 @@ optag_to_opcode = {
     OpTag.EQ: OP_IEQ,
     OpTag.NEQ: OP_INE,
 }
+
+bool_cast_table = {3: OP_I2B, 4: OP_L2B}
+cast_table = {(3, 4): OP_I2L, (4, 3): OP_L2I}
 
 
 class FunctionIR:
@@ -100,11 +112,21 @@ class IrModule:
             code.append(OP_LIC)
             idx = self.get_const_index(expr.val)
             code += idx.to_bytes(2, "little")
-
+        elif expr.kind == HirNodeTag.ConstStr:
+            code.append(OP_LSC)
+            idx = self.get_const_index(expr.val)
+            code += idx.to_bytes(2, "little")
+        elif expr.kind == HirNodeTag.ConstBool:
+            code.append(OP_LBT if expr.val == True else OP_LBF)
         elif expr.kind == HirNodeTag.VarRef:
             code.append(OP_ILOAD)
             code += expr.symbol.local_offset.to_bytes(2, "little")
-
+        elif expr.kind == HirNodeTag.BoolCast:
+            self.compile_expr(expr.expr, code)
+            code.append(OP_I2B)
+        elif expr.kind == HirNodeTag.Cast:
+            self.compile_expr(expr.expr, code)
+            code.append(cast_table[(expr.from_type, expr.to_type)])
         elif expr.kind == HirNodeTag.BinOp:
             self.compile_expr(expr.lhs, code)
             self.compile_expr(expr.rhs, code)
@@ -199,14 +221,14 @@ class IrModule:
         for node in block.nodes:
             if node.kind == HirNodeTag.ExternLibBlock:
                 extern_block = {
-                    "name": self.get_const_index(node.libname),
+                    "name": self.get_const_index(node.lib_prefix),
                     "indices": []
                 }
                 for symbol in node.symbols:
                     extern_block["indices"].append(
                         self.get_const_index(f"{symbol.lib_prefix}_{symbol.name}")
                     )
-                self.extern_lib_blocks[node.libname] = extern_block
+                self.extern_lib_blocks[node.lib_prefix] = extern_block
             else:
                 self.add_function(node)
 

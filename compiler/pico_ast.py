@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import Any, Optional, List
 
+from tokenizer import Token
+
 
 class OpTag:
     Assign = "Assign"
@@ -31,6 +33,7 @@ class NodeTag(str, Enum):
     NamedType = "NamedType"
 
     IntLiteral = "IntLiteral"
+    BoolLiteral = "BoolLiteral"
     Identifier = "Identifier"
     StrLiteral = "StrLiteral"
 
@@ -108,11 +111,10 @@ class FunctionDeclaration(Decl):
 
 
 class ExternLibBlock(Decl):
-    def __init__(self, token, libname: str, lib_prefix: str, decls: List[Decl]):
+    def __init__(self, token, lib_prefix: str, decls: List[Decl]):
         super().__init__(
             NodeTag.ExternLibBlock,
             token=token,
-            libname=libname,
             lib_prefix=lib_prefix,
             decls=decls,
         )
@@ -191,6 +193,11 @@ class IntLiteral(Expr):
 class StrLiteral(Expr):
     def __init__(self, value: str):
         super().__init__(NodeTag.StrLiteral, value=value)
+
+
+class BoolLiteral(Expr):
+    def __init__(self, value: bool):
+        super().__init__(NodeTag.BoolLiteral, value=value)
 
 
 class Identifier(Expr):

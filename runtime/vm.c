@@ -33,7 +33,8 @@ frame_start:
     while (frame->ip < code_len) {
         const pbyte opcode = READ_OPCODE();
         switch (opcode) {
-        case OP_LIC: {
+        case OP_LIC:
+        case OP_LSC: {
             PUSH(vm, READ_CONSTANT(vm))
             break;
         }
@@ -121,6 +122,31 @@ frame_start:
             LOGICAL_OP(vm, ||) break;
         }
 
+        case OP_LBT: {
+            PUSH(vm, pico_true);
+            break;
+        }
+        case OP_LBF: {
+            PUSH(vm, pico_false);
+            break;
+        }
+        case OP_I2B: {
+            const pico_value a = POP(vm);
+            PUSH(vm, a.i_value ? pico_true : pico_false);
+            break;
+        }
+        case OP_L2B: {
+            // TODO: implement long to boolean
+            break;
+        }
+        case OP_I2L: {
+            // TODO: implement int to long
+            break;
+        }
+        case OP_L2I: {
+            // TODO: implement long to int
+            break;
+        }
         case OP_LOG: {
             const pico_value a = POP(vm);
             printf("%d\n", a.i_value);

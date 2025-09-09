@@ -1,6 +1,7 @@
 # semantic analyzer
-from hir import Cast, HirNodeTag
+from hir import Cast, HirNodeTag, BoolCast
 from pico_ast import OpTag
+from pico_error import PicoError
 from pico_types import TypeRegistry
 
 
@@ -8,27 +9,23 @@ class Sema:
     def __init__(self, block):
         self.block = block
         self.type_registry: TypeRegistry = TypeRegistry.get_instance()
+        self.function_block = None
 
     def analyze(self):
         for node in self.block.nodes:
-            if node.kind==HirNodeTag.ExternLibBlock:
+            if node.kind == HirNodeTag.ExternLibBlock:
                 continue
             self._analyze_function_block(node)
 
     def _analyze_function_block(self, fb):
+        self.function_block = fb
         for node in fb.nodes:
             self._analyze_stmt(node)
 
     def _analyze_stmt(self, node):
         kind = node.kind
         if kind == HirNodeTag.Return:
-            # ret_type = self.type_registry.get_ret_type(node.func_type)
-            # if node.expr:
-            #     val_type = self._analyze_expr(node.expr)
-            #     # TODO: check for type compatibility for cast
-            #     if val_type != ret_type:
-            #         node.expr = Cast(node.token, node.expr, val_type, ret_type)
-            node.type_id = TypeRegistry.VoidType
+            self._analyze_return(node)
         elif kind == HirNodeTag.Log:
             self._analyze_expr(node.expr)
         elif kind == HirNodeTag.Block:
@@ -38,60 +35,142 @@ class Sema:
             for stmt in node.nodes:
                 self._analyze_stmt(stmt)
         elif kind == HirNodeTag.Branch:
-            # TODO: check if condition expr type is boolean else insert BoolCast
-            cond_type = self._analyze_expr(node.condition)
-            self._analyze_stmt(node.then_block)
-            if node.else_block:
-                self._analyze_stmt(node.else_block)
+            self._analyze_branch(node)
         elif kind == HirNodeTag.StoreLocal:
-            type_id = self._analyze_expr(node.value)
-            if not node.symbol.type:
-                node.symbol.type = type_id
+            self._analyze_storelocal(node)
         elif kind == HirNodeTag.Break or kind == HirNodeTag.Continue:
             pass
         else:
             self._analyze_expr(node)
 
+    def _analyze_branch(self, node):
+        cond_type = self._analyze_expr(node.condition)
+        if cond_type not in [TypeRegistry.BoolType, TypeRegistry.IntType, TypeRegistry.LongType]:
+            raise PicoError(
+                f"condition should be of type {self.type_registry.get_type(TypeRegistry.BoolType).kind} or {self.type_registry.get_type(TypeRegistry.IntType).kind}",
+                node.token)
+        if cond_type in [TypeRegistry.IntType, TypeRegistry.LongType]:
+            node.condition = BoolCast(node.condition.token, node.condition)
+        self._analyze_stmt(node.then_block)
+        if node.else_block:
+            self._analyze_stmt(node.else_block)
+
+    def _analyze_storelocal(self, node):
+        type_id = self._analyze_expr(node.value)
+        if not node.symbol.type:
+            node.symbol.type = type_id
+            node.type_id = type_id
+        else:
+            result_type = self.type_registry.get_assignment_type(node.symbol.type, type_id)
+            if result_type == TypeRegistry.NoneType:
+                raise PicoError(
+                    f"Cannot assign {self.type_registry.get_type(type_id).kind} to {self.type_registry.get_type(node.symbol.type).kind}",
+                    node.token
+                )
+            if type_id != result_type:
+                node.value = Cast(node.value.token, node.value, type_id, result_type)
+
+            node.type_id = result_type
+
+        return node.type_id
+
+    def _analyze_return(self, node):
+        tr = self.type_registry
+        ret_type = tr.get_ret_type(self.function_block.function_id)
+
+        if node.expr:
+            val_type = self._analyze_expr(node.expr)
+            result_type = tr.get_assignment_type(ret_type, val_type)
+
+            if result_type == TypeRegistry.NoneType:
+                raise PicoError(
+                    f"Return type mismatch: expected {tr.get_type(ret_type).kind}, got {tr.get_type(val_type).kind}",
+                    node.token
+                )
+
+            if val_type != result_type:
+                node.expr = Cast(node.token, node.expr, val_type, result_type)
+
+            node.type_id = result_type
+        else:
+            node.type_id = TypeRegistry.VoidType
+
     def _analyze_expr(self, node):
         kind = node.kind
         if kind == HirNodeTag.ConstInt:
             return TypeRegistry.IntType
+        elif kind == HirNodeTag.ConstBool:
+            return TypeRegistry.BoolType
+        elif kind == HirNodeTag.ConstStr:
+            return TypeRegistry.StrType
         elif kind == HirNodeTag.VarRef:
             return node.symbol.type
         elif kind == HirNodeTag.BinOp:
-            left_type = self._analyze_expr(node.lhs)
-            right_type = self._analyze_expr(node.rhs)
-            # TODO: check for type compatibility
-            if node.op_tag in [OpTag.AND, OpTag.OR]:
-                if left_type == TypeRegistry.BoolType and left_type != right_type:
-                    raise Exception(f"Error: both operand types should be boolean for logical operators")
-                node.type_id = left_type
-                return node.type_id
-
-            if node.op_tag in [OpTag.EQ, OpTag.NEQ, OpTag.LT, OpTag.LTE, OpTag.GT, OpTag.GTE]:
-                node.type_id = TypeRegistry.BoolType
-                return node.type_id
-
-            wider_type = self.type_registry.get_common_type(left_type, right_type)
-            if wider_type == TypeRegistry.NoneType:
-                raise Exception(f"Error: cannot perform {node.op_tag.lower()} on incompatible types")
-
-            if left_type != wider_type:
-                node.lhs = Cast(node.lhs.token, node.lhs, left_type, wider_type)
-
-            if right_type != wider_type:
-                node.rhs = Cast(node.rhs.token, node.rhs, right_type, wider_type)
-
-            node.type_id = wider_type
-            return node.type_id
+            return self._analyze_binop(node)
         elif kind == HirNodeTag.Call:
-            if node.calle.kind != HirNodeTag.VarRef:
-                raise Exception("Uncallable expression")
-            # TODO: check for argument count matches with function param count
-            for arg in node.args:
-                # TODO: check for type compatibility of args
-                arg_type = self._analyze_expr(arg)
-            return self.type_registry.get_ret_type(node.calle.symbol.type)
+            return self._analyze_call(node)
+        elif kind == HirNodeTag.StoreLocal:
+            return self._analyze_storelocal(node)
         else:
-            print(node)
             raise Exception(f"implementation error: cannot analyze node: {node.kind} yet")
+
+    def _analyze_call(self, node):
+        if node.calle.kind != HirNodeTag.VarRef:
+            raise PicoError("Uncallable expression", node.token)
+        new_args = []
+        for arg, param in zip(node.args, node.calle.symbol.params):
+            arg_type = self._analyze_expr(arg)
+            result_type = self.type_registry.get_assignment_type(param.type,
+                                                                 arg_type)
+            if result_type == TypeRegistry.NoneType:
+                raise PicoError(
+                    f"Argument type mismatch: expected {self.type_registry.get_type(param.type).kind}, got {self.type_registry.get_type(arg_type).kind}",
+                    node.token
+                )
+            if arg_type != result_type:
+                arg = Cast(arg.token, arg, arg_type, result_type)
+            new_args.append(arg)
+
+        node.args = new_args
+        return self.type_registry.get_ret_type(node.calle.symbol.type)
+
+    def _analyze_binop(self, node):
+        left_type = self._analyze_expr(node.lhs)
+        right_type = self._analyze_expr(node.rhs)
+
+        tr = self.type_registry
+
+        if node.op_tag in [OpTag.AND, OpTag.OR]:
+            result_type = tr.get_logical_type(left_type, right_type)
+            if result_type == TypeRegistry.NoneType:
+                raise PicoError(
+                    f"Error: both operands of '{node.op_tag}' must be boolean, got {tr.get_type(left_type).kind} and {tr.get_type(right_type).kind}"
+                    , node.token
+                )
+            node.type_id = result_type
+            return node.type_id
+
+        if node.op_tag in [OpTag.EQ, OpTag.NEQ, OpTag.LT, OpTag.LTE, OpTag.GT, OpTag.GTE]:
+            result_type = tr.get_comparison_type(left_type, right_type)
+            if result_type == TypeRegistry.NoneType:
+                raise PicoError(
+                    f"Error: cannot perform '{node.op_tag}' on types {tr.get_type(left_type).kind} and {tr.get_type(right_type).kind}",
+                    node.token
+                )
+            node.type_id = result_type
+            return node.type_id
+
+        result_type = tr.get_arithmetic_type(left_type, right_type)
+        if result_type == TypeRegistry.NoneType:
+            raise PicoError(
+                f"Error: cannot perform '{node.op_tag}' on incompatible types {tr.get_type(left_type).kind} and {tr.get_type(right_type).kind}",
+                node.token
+            )
+
+        if left_type != result_type:
+            node.lhs = Cast(node.lhs.token, node.lhs, left_type, result_type)
+        if right_type != result_type:
+            node.rhs = Cast(node.rhs.token, node.rhs, right_type, result_type)
+
+        node.type_id = result_type
+        return node.type_id

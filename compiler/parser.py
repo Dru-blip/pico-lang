@@ -1,3 +1,4 @@
+from pico_error import PicoSyntaxError
 from tokenizer import Tokenizer, TokenTag
 from pico_ast import (
     FunctionPrototype,
@@ -11,6 +12,7 @@ from pico_ast import (
     Param,
     Program,
     Assignment, BinOp, Log, VarDecl, ExprStmt, IfStmt, LoopStmt, Continue, Break, Call, StrLiteral, ExternLibBlock,
+    BoolLiteral,
 )
 
 
@@ -87,9 +89,8 @@ class Parser:
 
     def _expect_token(self, tag):
         if self.current_token.tag != tag:
-            raise SyntaxError(
-                f"expected {tag}, but got {self.current_token.tag}"
-            )
+            raise PicoSyntaxError(f"expected {tag.lower()}, but got {self.current_token.tag.lower()}",
+                                  self.tokens[self.pos - 1])
         return self._next_token()
 
     def _check(self, tag):
@@ -108,7 +109,7 @@ class Parser:
         if self._check(TokenTag.KW_FN):
             return self._parse_function_declaration()
 
-        raise Exception("invalid syntax : unknown decl")
+        raise PicoSyntaxError("invalid syntax", self.current_token)
 
     def _parse_extern_lib_block(self):
         main_token = self._next_token()
@@ -116,17 +117,13 @@ class Parser:
         self._expect_token(TokenTag.AT)
         self._expect_token(TokenTag.ID)
         self._expect_token(TokenTag.EQUAL)
-        libname = self._expect_token(TokenTag.STR_LIT).value
-        self._expect_token(TokenTag.AT)
-        self._expect_token(TokenTag.ID)
-        self._expect_token(TokenTag.EQUAL)
-        lib_prefix = self._expect_token(TokenTag.STR_LIT).value
+        lib_name = self._expect_token(TokenTag.STR_LIT).value
         self._expect_token(TokenTag.LBRACE)
         while not self._check(TokenTag.RBRACE):
             decls.append(self._parse_function_proto())
             self._expect_token(TokenTag.SEMICOLON)
         self._expect_token(TokenTag.RBRACE)
-        return ExternLibBlock(main_token, libname, lib_prefix, decls)
+        return ExternLibBlock(main_token, lib_name, decls)
 
     def _parse_function_declaration(self):
         proto = self._parse_function_proto()
@@ -227,9 +224,11 @@ class Parser:
 
     def _parse_return(self):
         main_token = self._next_token()
-        expr = None
         if not self._check(TokenTag.SEMICOLON):
             expr = self._parse_expr()
+        else:
+            expr = None
+
         self._expect_token(TokenTag.SEMICOLON)
         return Return(main_token, expr)
 
@@ -276,14 +275,18 @@ class Parser:
             return IntLiteral(int(token.value))
         elif token.tag == TokenTag.STR_LIT:
             return StrLiteral(token.value)
+        elif token.tag == TokenTag.KW_TRUE:
+            return BoolLiteral(True)
+        elif token.tag == TokenTag.KW_FALSE:
+            return BoolLiteral(False)
         elif token.tag == TokenTag.ID:
             return Identifier(token.value, token)
         else:
-            raise SyntaxError(f"invalid primary expression: {token.tag}")
+            raise PicoSyntaxError("invalid syntax", self.tokens[self.pos - 2])
 
     def _parse_type_expr(self):
         token = self._next_token()
         if token.tag == TokenTag.ID:
             return NamedType(token, token.value)
         else:
-            raise SyntaxError("unknown type specifier")
+            raise PicoSyntaxError("unknown type specifier", token)

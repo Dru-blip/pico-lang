@@ -4,7 +4,8 @@ from function_id import FunctionIdGenerator
 from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Param, Block, Return, IntLiteral, Identifier, \
     NodeTag
 from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag, HirLog, StoreLocal, BlockTag, \
-    VarRef, Branch, LoopBlock, Continue, Break, Call, HirExternalLibBlock
+    VarRef, Branch, LoopBlock, Continue, Break, Call, HirExternalLibBlock, ConstStr, ConstBool
+from pico_error import PicoError
 from pico_types import TypeRegistry
 from symtab import Symbol, SymbolKind, Linkage
 
@@ -58,9 +59,8 @@ class HirGen:
             for decl in node.decls:
                 symbol = self._gen_fn_prototype(decl, has_body=False, linkage=Linkage.External)
                 symbol.lib_prefix = node.lib_prefix
-                symbol.lib_name = node.libname
                 symbols.append(symbol)
-            self.global_block.add_node(HirExternalLibBlock(node.token, node.libname, node.lib_prefix, symbols))
+            self.global_block.add_node(HirExternalLibBlock(node.token, node.lib_prefix, symbols))
         else:
             self._gen_function(node)
 
@@ -109,10 +109,10 @@ class HirGen:
         already_defined = False
         if old_decl:
             if old_decl.type != func_type_id:
-                raise Exception("Incompatible function declarations")
+                raise PicoError("Incompatible function declarations", proto.token)
             already_defined = old_decl.is_defined
             if already_defined and has_body:
-                raise Exception(f"Function {proto.name} already defined")
+                raise PicoError(f"Function {proto.name} already defined", proto.token)
 
         func_symbol = Symbol(proto.name, SymbolKind.Function, func_type_id, 0)
         func_symbol.params = params
@@ -129,7 +129,7 @@ class HirGen:
         name = self.current_block.resolve(node.name)
 
         if name and name.scope_depth == self.scope_depth:
-            raise Exception(f"duplicate variable decl {name.name}")
+            raise PicoError(f"duplicate variable decl {name.name}", node.token)
 
         if name:
             symbol = Symbol(
@@ -197,12 +197,12 @@ class HirGen:
 
     def _generate_continue(self, node):
         if len(self.loop_stack) == 0:
-            raise Exception("continue statement out of side")
+            raise PicoError("continue statement out of side", node.token)
         self.current_block.add_node(Continue(node.token, self.loop_stack[-1]))
 
     def _generate_break(self, node):
         if len(self.loop_stack) == 0:
-            raise Exception("break statement out of side")
+            raise PicoError("break statement out of side", node.token)
         self.current_block.add_node(Break(node.token, self.loop_stack[-1]))
 
     def _generate_if_stmt(self, node):
@@ -276,6 +276,10 @@ class HirGen:
     def _generate_expr(self, node):
         if node.tag == NodeTag.IntLiteral:
             return ConstInt(node.value)
+        elif node.tag == NodeTag.StrLiteral:
+            return ConstStr(node.value)
+        elif node.tag == NodeTag.BoolLiteral:
+            return ConstBool(node.value)
         elif node.tag == NodeTag.Identifier:
             symbol = self.current_block.name_map.get(node.name)
             if symbol:
@@ -283,7 +287,7 @@ class HirGen:
 
             symbol = self.current_block.resolve(node.name)
             if not symbol:
-                raise Exception(f"undeclared identifier {node.name}")
+                raise PicoError(f"undeclared identifier {node.name}", node.token)
 
             return VarRef(node.token, symbol)
         elif node.tag == NodeTag.BinOp:
@@ -311,7 +315,9 @@ class HirGen:
                 return TypeRegistry.IntType
             elif type_node.name == "long":
                 return TypeRegistry.LongType
-        raise Exception(f"Unknown type {type_node.name}")
+            elif type_node.name == "str":
+                return TypeRegistry.StrType
+        raise PicoError(f"Unknown type {type_node.name}", type_node.token)
 
     def _make_unique_name(self, name: str) -> str:
         unique_name = f"{name}{self.var_id_counter}"

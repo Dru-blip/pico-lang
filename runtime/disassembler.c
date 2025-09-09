@@ -37,6 +37,9 @@ void print_constant_operand(pbyte *code, pulong *pc) {
 
 static const opcode_info opcode_table[] = {
     {OP_LIC, "LoadConstInt", 2, print_constant_operand},
+    {OP_LSC, "LoadConstString", 2, print_constant_operand},
+    {OP_LBT, "LoadBoolTrue", 0, NULL},
+    {OP_LBF, "LoadBoolFalse", 0, NULL},
     {OP_ISTORE, "IStore", 2, print_operand_two},
     {OP_ILOAD, "Iload", 2, print_operand_two},
 
@@ -59,6 +62,11 @@ static const opcode_info opcode_table[] = {
     {OP_ILE, "ILe", 0, NULL},
     {OP_IGT, "IGt", 0, NULL},
     {OP_IGE, "IGe", 0, NULL},
+
+    {OP_L2B, "LongToBool", 0, NULL},
+    {OP_L2I, "LongToInt", 0, NULL},
+    {OP_I2L, "IntToLong", 0, NULL},
+    {OP_I2B, "IntToBool", 0, NULL},
 
     {OP_JF, "Jf", 2, print_operand_two},
     {OP_JMP, "Jmp", 2, print_operand_two},

@@ -4,14 +4,13 @@ class TypeKind:
     Int = "int"
     Bool = "bool"
     Long = "long"
+    Str = "Str"
     Function = "function"
 
 
 class TypeObject:
-    def __init__(self, kind, *, size=0, align=0, ret_type=0, params=None, id=0):
+    def __init__(self, kind, *, ret_type=0, params=None, id=0):
         self.kind = kind
-        self.size = size
-        self.align = align
         self.ret_type = ret_type
         self.params = params or []
         self.id = id
@@ -19,7 +18,7 @@ class TypeObject:
 
 class TypeRegistry:
     _instance = None
-    type_counter = 5  # index to start storing types
+    type_counter = 6  # index to start storing types
 
     # primitive type IDs
     NoneType = 0
@@ -27,17 +26,57 @@ class TypeRegistry:
     BoolType = 2
     IntType = 3
     LongType = 4
+    StrType = 5
+
+    # arithmetic matrix
+    _arith_matrix = [
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 3, 4, 0],
+        [0, 0, 0, 4, 4, 0],
+        [0, 0, 0, 0, 0, 0],
+    ]
+
+    # comparison matrix
+    _comp_matrix = [
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 2, 0, 0, 0],
+        [0, 0, 0, 2, 2, 0],
+        [0, 0, 0, 2, 2, 0],
+        [0, 0, 0, 0, 0, 0],
+    ]
+
+    _logical_matrix = [
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 2, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+    ]
+
+    _assign_matrix = [
+        [0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0],
+        [0, 0, 2, 0, 0, 0],
+        [0, 0, 0, 3, 0, 0],
+        [0, 0, 0, 4, 4, 0],
+        [0, 0, 0, 0, 0, 5],
+    ]
 
     def __init__(self):
         if TypeRegistry._instance:
             return
 
         self.types = [
-            TypeObject(TypeKind.NoneType, size=0, align=0, id=0),
-            TypeObject(TypeKind.Void, size=0, align=0, id=1),
-            TypeObject(TypeKind.Bool, size=1, align=1, id=2),
-            TypeObject(TypeKind.Int, size=4, align=4, id=3),
-            TypeObject(TypeKind.Long, size=8, align=8, id=4),
+            TypeObject(TypeKind.NoneType, id=0),
+            TypeObject(TypeKind.Void, id=1),
+            TypeObject(TypeKind.Bool, id=2),
+            TypeObject(TypeKind.Int, id=3),
+            TypeObject(TypeKind.Long, id=4),
+            TypeObject(TypeKind.Str, id=5),
         ]
 
         TypeRegistry._instance = self
@@ -71,19 +110,26 @@ class TypeRegistry:
     def get_type(self, type_id):
         return self.types[type_id]
 
-    def get_common_type(self, a_type_id, b_type_id):
-        # TODO: replace with type matrix.
-        if a_type_id == b_type_id:
-            return a_type_id
+    @staticmethod
+    def get_arithmetic_type(lhs_id: int, rhs_id: int) -> int:
+        return TypeRegistry._lookup_matrix(TypeRegistry._arith_matrix, lhs_id, rhs_id)
 
-        atype = self.types[a_type_id]
-        btype = self.types[b_type_id]
+    @staticmethod
+    def get_comparison_type(lhs_id: int, rhs_id: int) -> int:
+        return TypeRegistry._lookup_matrix(TypeRegistry._comp_matrix, lhs_id, rhs_id)
 
-        if not atype or not btype:
+    @staticmethod
+    def get_logical_type(lhs_id: int, rhs_id: int) -> int:
+        return TypeRegistry._lookup_matrix(TypeRegistry._logical_matrix, lhs_id, rhs_id)
+
+    @staticmethod
+    def get_assignment_type(expected_id: int, got_id: int) -> int:
+        return TypeRegistry._lookup_matrix(TypeRegistry._assign_matrix, expected_id, got_id)
+
+    @staticmethod
+    def _lookup_matrix(matrix, lhs_id: int, rhs_id: int) -> int:
+        if lhs_id < 0 or lhs_id >= len(matrix):
             return TypeRegistry.NoneType
-
-        if (atype.kind == TypeKind.Int and btype.kind == TypeKind.Long) or \
-                (atype.kind == TypeKind.Long and btype.kind == TypeKind.Int):
-            return TypeRegistry.LongType
-
-        return TypeRegistry.NoneType
+        if rhs_id < 0 or rhs_id >= len(matrix[lhs_id]):
+            return TypeRegistry.NoneType
+        return matrix[lhs_id][rhs_id]

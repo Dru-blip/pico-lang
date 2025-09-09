@@ -1,5 +1,4 @@
 from enum import Enum
-from pdb import line_prefix
 
 
 class HirNodeTag(Enum):
@@ -19,6 +18,8 @@ class HirNodeTag(Enum):
     StoreLocal = "StoreLocal"
     BinOp = "BinOp"
     ConstInt = "ConstInt"
+    ConstStr = "ConstStr"
+    ConstBool = "ConstBool"
     Call = "Call"
 
 
@@ -61,8 +62,8 @@ class HirBlock(HirNode):
 
 
 class HirExternalLibBlock(HirNode):
-    def __init__(self, token, libname, lib_prefix, symbols):
-        super().__init__(HirNodeTag.ExternLibBlock, libname=libname, lib_prefix=lib_prefix, token=token,
+    def __init__(self, token, lib_prefix, symbols):
+        super().__init__(HirNodeTag.ExternLibBlock, lib_prefix=lib_prefix, token=token,
                          symbols=symbols)
 
 
@@ -144,6 +145,11 @@ class Cast(HirNode):
         self.to_type = to_type
 
 
+class BoolCast(HirNode):
+    def __init__(self, token, expr):
+        super().__init__(HirNodeTag.Cast, token=token, expr=expr)
+
+
 class Call(HirNode):
     def __init__(self, token, calle, args):
         super().__init__(HirNodeTag.Call, token=token, calle=calle, args=args)
@@ -158,3 +164,14 @@ class ConstInt(HirNode):
     def __init__(self, val: int):
         super().__init__(HirNodeTag.ConstInt, val=val)
         self.val = val
+
+
+class ConstStr(HirNode):
+    def __init__(self, val: str):
+        super().__init__(HirNodeTag.ConstStr, val=val)
+        self.val = val
+
+
+class ConstBool(HirNode):
+    def __init__(self, val: bool):
+        super().__init__(HirNodeTag.ConstBool, val=val)
