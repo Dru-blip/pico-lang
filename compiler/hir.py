@@ -61,7 +61,7 @@ class HirBlock(HirNode):
     def add_node(self, node):
         self.nodes.append(node)
 
-    def resolve(self, name):
+    def resolve(self, name) -> Symbol | None:
         temp = self
         while temp:
             symbol = temp.symbols.get(name)
@@ -148,8 +148,8 @@ class StoreLocal(HirNode):
 
 
 class VarRef(HirNode):
-    def __init__(self, token, symbol):
-        super().__init__(HirNodeTag.VarRef, token=token, symbol=symbol)
+    def __init__(self, token, name, symbol=None):
+        super().__init__(HirNodeTag.VarRef, token=token, name=name, symbol=symbol)
 
 
 class HirLog(HirNode):

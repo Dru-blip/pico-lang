@@ -7,10 +7,14 @@
 #include <stdio.h>
 #include <string.h>
 
-#define GLUE(a, b) a##b
-#define FUNC_NAME(prefix, name) GLUE(prefix, name)
-#define DEF_LIB_FUNC(ret, name, ...)                                           \
-    ret FUNC_NAME(LIB_PREFIX, name)(__VA_ARGS__)
+#define DECLARE_LIB_FN(prefix, name)                                           \
+    PICO_EXPORT pico_value prefix##name(pico_env *env, pico_value *args)
+
+#define PICO_LIB_FN(prefix, name)                                              \
+    PICO_EXPORT pico_value prefix##name(pico_env *env, pico_value *args)
+
+#define PICO_LIB_FN_VOID(prefix, name)                                         \
+    PICO_EXPORT void prefix##name(pico_env *env, pico_value *args)
 
 #define PICO_TRUE pico_true
 #define PICO_FALSE pico_false
@@ -25,6 +29,16 @@
 
 #define AS_INT(pico_value) ((pico_value)->i_value)
 #define AS_STR(pico_value) ((pico_value)->s_value)
+
+#define PICO_GET_OBJECT_FIELD_PTR(obj, index) (&((obj)->fields[(index)]))
+#define PICO_GET_OBJECT_FIELD(obj, index) ((obj)->fields[(index)])
+
+// Typed field getters
+#define PICO_OBJECT_GET_INT_FIELD(obj, index) ((obj)->fields[(index)].i_value)
+#define PICO_OBJECT_GET_BOOL_FIELD(obj, index) ((obj)->fields[(index)].boolean)
+#define PICO_OBJECT_GET_STR_FIELD(obj, index) ((obj)->fields[(index)].s_value)
+#define PICO_OBJECT_GET_STR_LEN(obj, index) ((obj)->fields[(index)].size)
+#define PICO_OBJECT_GET_OBJ_FIELD(obj, index) ((obj)->fields[(index)].objref)
 
 #define PICO_POP_INT(vm_ptr) ((vm_ptr)->stack[--((vm_ptr)->sp)].i_value)
 #define PICO_POP_STR(vm_ptr) ((vm_ptr)->stack[--((vm_ptr)->sp)].s_value)
@@ -135,11 +149,19 @@ struct pico_env {
 };
 
 typedef pico_value (*pico_native_fn)(pico_env *env, pico_value *args);
+typedef void (*pico_native_void_fn)(pico_env *env, pico_value *args);
+
 typedef void (*pico_lib_init)(pico_env *env);
+
+typedef enum { NATIVE_RETURNS_VALUE, NATIVE_RETURNS_VOID } native_fn_kind;
 
 typedef struct native_fn_entry {
     const char *name;
-    pico_native_fn handle;
+    native_fn_kind kind;
+    union {
+        pico_native_fn value_handle;
+        pico_native_void_fn void_handle;
+    };
     UT_hash_handle hh;
 } native_fn_entry;
 
@@ -153,7 +175,7 @@ void pico_vm_init(pico_vm *vm, bytecode_unit *unit);
 void pico_vm_run(pico_env *env);
 void pico_vm_shutdown(pico_vm *vm);
 
-void pico_load_libraries(pico_env *env, const char *lib_name);
+void pico_load_libraries(pico_env *env, char *lib_name);
 void pico_deinit_libraries(void **lib_handles);
 
 /**
@@ -165,8 +187,21 @@ static inline void pico_register_native_function(pico_env *env,
                                                  pico_native_fn handle) {
 
     native_fn_entry *entry = malloc(sizeof(*entry));
-    entry->handle = handle;
     entry->name = strdup(name);
+    entry->kind = NATIVE_RETURNS_VALUE;
+    entry->value_handle = handle;
+    HASH_ADD_KEYPTR(hh, env->native_functions, entry->name, strlen(entry->name),
+                    entry);
+}
+
+static inline void
+pico_register_native_void_function(pico_env *env, const char *name,
+                                   pico_native_void_fn handle) {
+
+    native_fn_entry *entry = malloc(sizeof(*entry));
+    entry->name = strdup(name);
+    entry->kind = NATIVE_RETURNS_VOID;
+    entry->void_handle = handle;
     HASH_ADD_KEYPTR(hh, env->native_functions, entry->name, strlen(entry->name),
                     entry);
 }

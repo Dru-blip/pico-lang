@@ -1,3 +1,8 @@
+from typing import List
+
+from symtab import Symbol
+
+
 class TypeKind:
     NoneType = "None"
     Void = "Void"
@@ -16,6 +21,10 @@ class TypeObject:
         self.params = params or []
         self.fields = fields or []
         self.id = id
+        self.is_complete = False  # for structs
+
+    def __str__(self):
+        return f"Type<{self.kind}:{self.id}>"
 
 
 class TypeRegistry:
@@ -105,16 +114,24 @@ class TypeRegistry:
         TypeRegistry.type_counter += 1
         return new_type.id
 
-    def add_struct(self, fields):
+    def add_struct(self, fields: List[Symbol]):
         fields = fields or []
         for i, t in enumerate(self.types[6:], start=6):
             if not t or t.kind != TypeKind.Struct:
                 continue
-
+            if not t.is_complete:
+                t.fields = fields
+                return i
             match = all(ft.type == f.type for ft, f in zip(t.fields, fields))
             if match:
                 return i
         new_type = TypeObject(TypeKind.Struct, fields=fields, id=TypeRegistry.type_counter)
+        self.types.append(new_type)
+        TypeRegistry.type_counter += 1
+        return new_type.id
+
+    def add_incomplete_struct(self):
+        new_type = TypeObject(TypeKind.Struct, id=TypeRegistry.type_counter)
         self.types.append(new_type)
         TypeRegistry.type_counter += 1
         return new_type.id
@@ -139,7 +156,15 @@ class TypeRegistry:
 
     @staticmethod
     def get_assignment_type(expected_id: int, got_id: int) -> int:
-        return TypeRegistry._lookup_matrix(TypeRegistry._assign_matrix, expected_id, got_id)
+        is_compatible = TypeRegistry._lookup_matrix(TypeRegistry._assign_matrix, expected_id, got_id)
+        if is_compatible == TypeRegistry.NoneType:
+            tr_ = TypeRegistry.get_instance()
+            e_type_obj = tr_.get_type(expected_id)
+            got_type_obj = tr_.get_type(got_id)
+            if e_type_obj.kind != got_type_obj.kind:
+                return TypeRegistry.NoneType
+            return got_id
+        return is_compatible
 
     @staticmethod
     def _lookup_matrix(matrix, lhs_id: int, rhs_id: int) -> int:

@@ -153,6 +153,36 @@ class Tokenizer:
                 self.col = 1
                 self.line_start = self.pos
                 continue
+            if c == "/":
+                if self.pos + 1 < len(self.source):
+                    nxt = self.source[self.pos + 1]
+                    if nxt == "/":
+                        self.pos += 2
+                        self.col += 2
+                        while self._current() not in ("\n", "\0"):
+                            self._advance()
+                        continue
+                    elif nxt == "*":
+                        self.pos += 2
+                        self.col += 2
+                        while True:
+                            c = self._current()
+                            if c == "\0":
+                                raise ValueError(
+                                    f"Unterminated block comment starting at line {self.line}, col {self.col}"
+                                )
+                            if c == "\n":
+                                self.pos += 1
+                                self.line += 1
+                                self.col = 1
+                                self.line_start = self.pos
+                                continue
+                            if c == "*" and self.pos + 1 < len(self.source) and self.source[self.pos + 1] == "/":
+                                self.pos += 2
+                                self.col += 2
+                                break
+                            self._advance()
+                        continue
             break
 
     def _next(self) -> Token:

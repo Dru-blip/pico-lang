@@ -34,7 +34,10 @@ frame_start:
     while (frame->ip < code_len) {
         const pbyte opcode = READ_OPCODE();
         switch (opcode) {
-        case OP_LIC:
+        case OP_LIC: {
+            PUSH(vm, READ_CONSTANT(vm));
+            break;
+        }
         case OP_LSC: {
             PUSH(vm, READ_CONSTANT(vm))
             break;
@@ -178,6 +181,18 @@ frame_start:
             }
             goto frame_start;
         }
+        case OP_VOID_CALL_EXTERN: {
+            puint name_index = READ_TWO_BYTES();
+            pico_value *fn_name = &vm->constants[name_index];
+            native_fn_entry *entry;
+            HASH_FIND_STR(env->native_functions, fn_name->s_value, entry);
+            if (!entry) {
+                printf("cannot find function: %s\n", fn_name->s_value);
+                exit(EXIT_FAILURE);
+            }
+            entry->void_handle(env, frame->stack);
+            break;
+        }
         case OP_CALL_EXTERN: {
             puint name_index = READ_TWO_BYTES();
             pico_value *fn_name = &vm->constants[name_index];
@@ -187,8 +202,7 @@ frame_start:
                 printf("cannot find function: %s\n", fn_name->s_value);
                 exit(EXIT_FAILURE);
             }
-            pico_value result = entry->handle(env, frame->stack);
-            // PUSH(vm, result);
+            PUSH(vm, entry->value_handle(env, frame->stack));
             break;
         }
         case OP_RET: {

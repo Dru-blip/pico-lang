@@ -8,14 +8,16 @@ from pico_error import PicoError
 from sema import Sema
 
 
-# TODO: emit type descriptors in bytecode
-# TODO: introduce nil type
+# TODO: field access in structs.
+# TODO: emit type descriptors in bytecode.
+# TODO: introduce nil type.
 # TODO: while and for loops.
+# TODO: else if and switch statements.
 # TODO: increment and decrement operators.
+# TODO: logical not operator.
 # TODO: Compound assignments.
 # TODO: Ternary expressions
-# TODO: switch statements
-# TODO: signed integers.
+# TODO: unsigned integers,remaining signed integers(long,byte,char,byte).
 def main(filename: str):
     with open(filename) as f:
         source = f.read()
@@ -36,5 +38,5 @@ def main(filename: str):
 
 
 if __name__ == '__main__':
-    # main("test.pco")
+    # main("test.pic")
     typer.run(main)

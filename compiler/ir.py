@@ -1,5 +1,6 @@
 from hir import FunctionBlock, HirBlock, HirNodeTag
 from pico_ast import OpTag
+from pico_types import TypeRegistry
 from symtab import Linkage
 
 # data
@@ -42,7 +43,9 @@ OP_JF = 0x60
 OP_JMP = 0x62
 OP_RET = 0x66
 OP_CALL = 0x68
+OP_VOID_CALL = 0x69
 OP_CALL_EXTERN = 0x6A
+OP_VOID_CALL_EXTERN = 0x6B
 
 # structs
 OP_ALLOCA_STRUCT = 0x70
@@ -136,15 +139,16 @@ class IrModule:
             self.compile_expr(expr.rhs, code)
             code.append(optag_to_opcode[expr.op_tag])
         elif expr.kind == HirNodeTag.Call:
+            is_void_call = expr.type_id == TypeRegistry.VoidType
             for arg in expr.args:
                 self.compile_expr(arg, code)
             if expr.function_symbol.linkage == Linkage.External:
-                code.append(OP_CALL_EXTERN)
+                code.append(OP_VOID_CALL_EXTERN if is_void_call else OP_CALL_EXTERN)
                 code += self.get_const_index(f"{expr.function_symbol.lib_prefix}_{expr.function_symbol.name}").to_bytes(
                     2,
                     "little")
             else:
-                code.append(OP_CALL)
+                code.append(OP_VOID_CALL if is_void_call else OP_CALL)
                 code += expr.function_symbol.function_id.to_bytes(2, "little")
         elif expr.kind == HirNodeTag.CreateStruct:
             code.append(OP_ALLOCA_STRUCT)

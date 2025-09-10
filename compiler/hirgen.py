@@ -42,7 +42,19 @@ class HirGen:
         self.loop_counter = 0
         self.function_id_gen = FunctionIdGenerator.get_instance()
 
+    def _type_gen_pass(self):
+        """
+        iterate through top level nodes and when struct decl appears add it to the type registery
+        :return:None
+        """
+        for node in self.program.nodes:
+            if node.tag == NodeTag.StructDecl:
+                struct_type = self.type_registry.add_incomplete_struct()
+                self.global_block.add_symbol(Symbol(node.name, SymbolKind.Struct, struct_type))
+            continue
+
     def generate(self):
+        self._type_gen_pass()
         for node in self.program.nodes:
             self._gen_decl(node)
         return self.global_block
@@ -71,8 +83,10 @@ class HirGen:
                 field_symbol = Symbol(field_name, SymbolKind.StructField, field_type)
                 field_symbol.field_index = i
                 fields.append(field_symbol)
-            struct_type = self.type_registry.add_struct(fields)
-            struct_symbol = Symbol(node.name, SymbolKind.Struct, struct_type)
+            struct_symbol = self.global_block.resolve(node.name)
+            struct_type = self.type_registry.get_type(struct_symbol.type)
+            struct_type.fields = fields
+            struct_type.is_complete = True
             struct_symbol.fields = fields
             self.global_block.add_symbol(struct_symbol)
         else:
@@ -140,32 +154,25 @@ class HirGen:
             type_id = self._transform_type(node.type_)
         else:
             type_id = TypeRegistry.NoneType
-        name = self.current_block.resolve(node.name)
 
-        if name and name.scope_depth == self.scope_depth:
-            raise PicoError(f"duplicate variable decl {name.name}", node.token)
+        # Only check for duplicate declarations in current scope
+        existing = self.current_block.symbols.get(node.name)
+        if existing and existing.scope_depth == self.scope_depth:
+            raise PicoError(f"duplicate variable decl {node.name}", node.token)
 
-        if name:
-            symbol = Symbol(
-                self._make_unique_name(node.name),
-                SymbolKind.Variable,
-                type_id,
-                self.scope_depth,
-            )
-            self.current_block.name_map[node.name] = symbol
-        else:
-            symbol = Symbol(
-                node.name,
-                SymbolKind.Variable,
-                type_id,
-                self.scope_depth,
-            )
+        symbol = Symbol(
+            node.name,
+            SymbolKind.Variable,
+            type_id,
+            self.scope_depth,
+        )
 
         self.current_block.add_symbol(symbol)
         value = self._generate_expr(node.init)
 
+        # Create StoreLocal without resolving the symbol reference (defaults to None)
         self.current_block.add_node(
-            StoreLocal(symbol.name, node.token, symbol, value)
+            StoreLocal(node.name, node.token, None, value)
         )
         symbol.local_offset = self.function_block.local_count
         self.function_block.local_count += 1
@@ -292,29 +299,22 @@ class HirGen:
         elif node.tag == NodeTag.BoolLiteral:
             return ConstBool(node.value)
         elif node.tag == NodeTag.Identifier:
-            symbol = self.current_block.name_map.get(node.name)
-            if symbol:
-                return VarRef(node.token, symbol)
-
-            symbol = self.current_block.resolve(node.name)
-            if not symbol:
-                raise PicoError(f"undeclared identifier {node.name}", node.token)
-
-            return VarRef(node.token, symbol)
+            # Don't resolve symbol here - just store the name
+            return VarRef(node.token, node.name)  # Remove symbol parameter
         elif node.tag == NodeTag.BinOp:
             lhs = self._generate_expr(node.lhs)
             rhs = self._generate_expr(node.rhs)
             return BinOp(node.token, node.op_tag, lhs, rhs)
         elif node.tag == NodeTag.Assignment:
-            lhs = self._generate_expr(node.target)
-            rhs = self._generate_expr(node.val)
-            return StoreLocal(lhs.symbol.name, node.token, lhs.symbol, rhs)
+            target = self._generate_expr(node.target)
+            value = self._generate_expr(node.val)
+            return StoreLocal(target.name, node.token, None, value)  # symbol=None
         elif node.tag == NodeTag.Call:
-            calle = self._generate_expr(node.calle)
+            callee = self._generate_expr(node.calle)
             args = []
             for arg in node.args:
                 args.append(self._generate_expr(arg))
-            return Call(node.token, calle, args)
+            return Call(node.token, callee, args)
         elif node.tag == NodeTag.StaticAccess:
             qualifier = self._generate_expr(node.qualifier)
             name = self._generate_expr(node.name)
@@ -339,6 +339,16 @@ class HirGen:
                 return TypeRegistry.LongType
             elif type_node.name == "str":
                 return TypeRegistry.StrType
+            elif type_node.name == "bool":
+                return TypeRegistry.BoolType
+            else:
+                type_symbol = self.global_block.resolve(type_node.name)
+                if not type_symbol:
+                    raise PicoError(f"Unknown type {type_node.name}", type_node.token)
+                if type_symbol.kind != SymbolKind.Struct:
+                    raise PicoError(f"Unknown type {type_node.name}", type_node.token)
+                return type_symbol.type
+
         raise PicoError(f"Unknown type {type_node.name}", type_node.token)
 
     def _make_unique_name(self, name: str) -> str:

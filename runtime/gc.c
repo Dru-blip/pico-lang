@@ -1,3 +1,4 @@
+/* implementation of Semi Space Copying Garbage Collector */
 #include "gc.h"
 #include "pico.h"
 #include "worklist.h"
@@ -53,6 +54,7 @@ bool pico_gc_extend_spaces(pico_gc *gc, pico_env *env) {
     gc_semi_space old_from_space = gc->from_space;
 
     gc->to_space = new_from_space;
+    // collect objects to new from space.
     pico_gc_collect(gc, env);
     gc->from_space = new_to_space;
     flip_spaces(gc);

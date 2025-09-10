@@ -35,7 +35,9 @@
 #define OP_JMP 0x62
 #define OP_RET 0x66
 #define OP_CALL 0x68
+#define OP_VOID_CALL 0x69
 #define OP_CALL_EXTERN 0x6A
+#define OP_VOID_CALL_EXTERN 0x6B
 
 #define OP_ALLOCA_STRUCT 0x70
 #define OP_SET_FIELD 0x71

@@ -1,9 +1,11 @@
 #include "gc.h"
 #include "pico.h"
 #include "stb_ds.h"
+#include <dirent.h>
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void pico_env_init(pico_env *env) {
     env->lib_handles = nullptr;
@@ -20,22 +22,45 @@ void pico_env_deinit(pico_env *env) {
     free(env->vm);
 }
 
-void pico_load_libraries(pico_env *env, const char *lib_name) {
-    void *lib_handle = dlopen(lib_name, RTLD_LAZY);
+const bool check_file_ext(const char *filename, const char *ext) {
+    const char *dot = strrchr(filename, '.');
+    if (!dot || dot == filename)
+        return false;
+    return strcmp(dot + 1, ext) == 0;
+}
 
-    if (!lib_handle) {
-        fprintf(stderr, "Failed to load library %s: %s\n", lib_name, dlerror());
+void pico_load_libraries(pico_env *env, char *lib_dir_name) {
+    DIR *lib_dir = opendir(lib_dir_name);
+    if (!lib_dir) {
+        fprintf(stderr, "failed to open %s: %s\n", lib_dir_name, strerror(1));
         exit(EXIT_FAILURE);
     }
+    char path[256];
+    struct dirent *entry;
+    while ((entry = readdir(lib_dir))) {
+        if (!check_file_ext(entry->d_name, "so"))
+            continue;
 
-    pico_lib_init init_fn = (pico_lib_init)dlsym(lib_handle, "pico_lib_Init");
-    if (!init_fn) {
-        fprintf(stderr, "Failed to find pico_lib_Init in %s\n", lib_name);
-        exit(EXIT_FAILURE);
+        snprintf(path, sizeof(path), "%s/%s", lib_dir_name, entry->d_name);
+        void *lib_handle = dlopen(path, RTLD_LAZY);
+
+        if (!lib_handle) {
+            fprintf(stderr, "Failed to load library %s: %s\n", entry->d_name,
+                    dlerror());
+            exit(EXIT_FAILURE);
+        }
+
+        pico_lib_init init_fn =
+            (pico_lib_init)dlsym(lib_handle, "pico_lib_Init");
+        if (!init_fn) {
+            fprintf(stderr, "Failed to find pico_lib_Init in %s\n",
+                    entry->d_name);
+            exit(EXIT_FAILURE);
+        }
+
+        init_fn(env);
+        arrput(env->lib_handles, lib_handle);
     }
-
-    init_fn(env);
-    arrput(env->lib_handles, lib_handle);
 }
 
 void pico_deinit_libraries(void **lib_handles) {

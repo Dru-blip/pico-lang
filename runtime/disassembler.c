@@ -72,6 +72,8 @@ static const opcode_info opcode_table[] = {
     {OP_JMP, "Jmp", 2, print_operand_two},
     {OP_RET, "Ret", 0, NULL},
     {OP_CALL, "Call", 2, print_operand_two},
+    {OP_VOID_CALL, "VoidCall", 2, print_operand_two},
+    {OP_VOID_CALL_EXTERN, "VoidCallExtern", 2, print_operand_two},
     {OP_CALL_EXTERN, "CallExtern", 2, print_operand_two},
 
     {OP_ALLOCA_STRUCT, "AllocaStruct", 2, print_operand_two},
@@ -112,7 +114,7 @@ static void print_function(const pico_function *fn, int index) {
         printf("%-12s", info->name);
 
         if (info->print_fp) {
-            printf("%-10s", "");
+            printf("%-15s", "");
             info->print_fp(fn->code, &pc);
         }
 

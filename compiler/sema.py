@@ -1,6 +1,4 @@
 # semantic analyzer
-
-
 from hir import Cast, HirNodeTag, BoolCast
 from pico_ast import OpTag
 from pico_error import PicoError
@@ -13,6 +11,7 @@ class Sema:
         self.block = block
         self.type_registry: TypeRegistry = TypeRegistry.get_instance()
         self.function_block = None
+        self.current_block = None
 
     def analyze(self):
         for node in self.block.nodes:
@@ -22,6 +21,7 @@ class Sema:
 
     def _analyze_function_block(self, fb):
         self.function_block = fb
+        self.current_block = fb
         for node in fb.nodes:
             self._analyze_stmt(node)
 
@@ -32,8 +32,10 @@ class Sema:
         elif kind == HirNodeTag.Log:
             self._analyze_expr(node.expr)
         elif kind == HirNodeTag.Block:
+            self.current_block = node
             for stmt in node.nodes:
                 self._analyze_stmt(stmt)
+            self.current_block = self.current_block.parent
         elif kind == HirNodeTag.LoopBlock:
             for stmt in node.nodes:
                 self._analyze_stmt(stmt)
@@ -59,6 +61,13 @@ class Sema:
             self._analyze_stmt(node.else_block)
 
     def _analyze_storelocal(self, node):
+        # Resolve symbol if not already resolved
+        if node.symbol is None:
+            sym = self.current_block.resolve(node.name)
+            if not sym:
+                raise PicoError(f"undeclared identifier {node.name}", node.token)
+            node.symbol = sym
+
         type_id = self._analyze_expr(node.value)
         if not node.symbol.type:
             node.symbol.type = type_id
@@ -107,6 +116,11 @@ class Sema:
         elif kind == HirNodeTag.ConstStr:
             return TypeRegistry.StrType
         elif kind == HirNodeTag.VarRef:
+            if node.symbol is None:
+                sym = self.current_block.resolve(node.name)
+                if not sym:
+                    raise PicoError(f"undeclared identifier {node.name}", node.token)
+                node.symbol = sym
             return node.symbol.type
         elif kind == HirNodeTag.BinOp:
             return self._analyze_binop(node)
@@ -122,6 +136,14 @@ class Sema:
     def _analyze_create_struct(self, node):
         if node.name.kind != HirNodeTag.VarRef:
             raise PicoError("Invalid struct literal", node.token)
+
+        # Resolve struct symbol if not already resolved
+        if node.name.symbol is None:
+            sym = self.current_block.resolve(node.name.name)
+            if not sym:
+                raise PicoError(f"undeclared struct {node.name.name}", node.token)
+            node.name.symbol = sym
+
         if node.name.symbol.kind != SymbolKind.Struct:
             raise PicoError("Invalid struct literal", node.token)
         field_symbols = node.name.symbol.fields
@@ -148,12 +170,34 @@ class Sema:
             raise PicoError("Uncallable expression", node.token)
 
         if node.calle.kind == HirNodeTag.VarRef:
+            # Resolve callee symbol if not already resolved
+            if node.calle.symbol is None:
+                sym = self.current_block.resolve(node.calle.name)
+                if not sym:
+                    raise PicoError(f"undeclared function {node.calle.name}", node.token)
+                node.calle.symbol = sym
+
             function_symbol = node.calle.symbol
+            if function_symbol.kind != SymbolKind.Function:
+                raise PicoError(f"{node.calle.name} is not a function", node.token)
             params = function_symbol.params
             return_type = self.type_registry.get_ret_type(function_symbol.type)
         else:
+            # Handle StaticAccess - resolve qualifier and name symbols
+            if node.calle.qualifier.symbol is None:
+                qual_sym = self.current_block.resolve(node.calle.qualifier.name)
+                if not qual_sym:
+                    raise PicoError(f"undeclared identifier {node.calle.qualifier.name}", node.token)
+                node.calle.qualifier.symbol = qual_sym
+
+            if node.calle.name.symbol is None:
+                name_sym = node.calle.qualifier.symbol.blockRef.resolve(node.calle.name.name)
+                if not name_sym:
+                    raise PicoError(f"undeclared function {node.calle.name.name}", node.token)
+                node.calle.name.symbol = name_sym
+
             qualifier_symbol: Symbol = node.calle.qualifier.symbol
-            function_symbol = qualifier_symbol.blockRef.resolve(node.calle.name.symbol.name)
+            function_symbol = node.calle.name.symbol
             params = function_symbol.params
             return_type = self.type_registry.get_ret_type(function_symbol.type)
 
@@ -171,6 +215,7 @@ class Sema:
                 arg = Cast(arg.token, arg, arg_type, result_type)
             new_args.append(arg)
         node.function_symbol = function_symbol
+        node.type_id = return_type
         node.args = new_args
         return return_type
 
