@@ -1,7 +1,6 @@
 from enum import Enum
 from typing import Any, Optional, List
 
-
 class OpTag:
     Assign = "Assign"
     OR = "OR"
@@ -26,6 +25,7 @@ class OpTag:
 
     Call = "Call"
     StaticAccess = "StaticAccess"
+    StructLiteral = "StructLiteral"
 
 
 class NodeTag(str, Enum):
@@ -42,7 +42,7 @@ class NodeTag(str, Enum):
 
     Assignment = "Assignment"
     Call = "Call"
-
+    StructLiteral = "StructLiteral"
     StaticAccess = "StaticAccess"
 
     If = "If"
@@ -60,6 +60,8 @@ class NodeTag(str, Enum):
     FunctionDeclaration = "FunctionDeclaration"
     FunctionPrototype = "FunctionPrototype"
     ExternLibBlock = "ExternLibBlock"
+    StructField = "StructField"
+    StructDecl = "StructDecl"
 
 
 class Node:
@@ -84,6 +86,16 @@ class NamedType(Node):
 class Decl(Node):
     def __init__(self, tag: NodeTag, **props):
         super().__init__(tag, **props)
+
+
+class StructField(Node):
+    def __init__(self, token, field_type, name):
+        super().__init__(NodeTag.StructField, token=token, name=name, type=field_type)
+
+
+class StructDecl(Decl):
+    def __init__(self, token, name, fields):
+        super().__init__(NodeTag.StructDecl, token=token, name=name, fields=fields)
 
 
 class Param(Node):
@@ -174,6 +186,17 @@ class Block(Stmt):
 class Expr(Node):
     def __init__(self, tag: NodeTag, **props):
         super().__init__(tag, **props)
+
+
+class StructLiteral(Expr):
+    def __init__(self, token, name, values):
+        super().__init__(NodeTag.StructLiteral, token=token, name=name, values=values)
+
+
+class FieldValue:
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
 
 
 class StaticAccess(Expr):

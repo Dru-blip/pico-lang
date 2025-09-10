@@ -4,8 +4,10 @@ from enum import Enum
 class SymbolKind:
     Variable = "Variable"
     Function = "Function"
+    Struct = "Struct"
     Parameter = "Parameter"
     Module = "Module"
+    StructField = "StructField"
 
 
 class Linkage(Enum):
@@ -14,7 +16,7 @@ class Linkage(Enum):
 
 
 class Symbol:
-    def __init__(self, name, kind, type_id, scope_depth, **extra):
+    def __init__(self, name, kind, type_id, scope_depth=0, **extra):
         self.name = name
         self.kind = kind
         self.type = type_id
@@ -27,6 +29,8 @@ class Symbol:
         self.linkage = Linkage.Internal  # for functions
         self.lib_name = None
         self.blockRef = None  # for modules
+        self.fields = []  # for structs
+        self.field_index = -1
 
         # assign any extra attributes
         for k, v in extra.items():

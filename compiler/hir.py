@@ -12,6 +12,10 @@ class HirNodeTag(Enum):
     LoopBlock = "LoopBlock"
     ExternLibBlock = "ExternLibBlock"
 
+    StructDecl = "StructDecl"
+    CreateStruct = "CreateStruct"
+    FieldValue = "FieldValue"
+
     StaticAccess = "StaticAccess"
     Break = "Break"
     Continue = "Continue"
@@ -169,6 +173,18 @@ class BoolCast(HirNode):
 class StaticAccess(HirNode):
     def __init__(self, token, qualifier, name):
         super().__init__(HirNodeTag.StaticAccess, token=token, qualifier=qualifier, name=name)
+
+
+class CreateStruct(HirNode):
+    def __init__(self, token, name, values):
+        super().__init__(HirNodeTag.CreateStruct, token=token, name=name, values=values)
+        self.symbol = None
+
+
+class FieldValue(HirNode):
+    def __init__(self, name, value):
+        super().__init__(HirNodeTag.FieldValue, token=name, name=name, value=value)
+        self.field_index = -1  # set by sema
 
 
 class Call(HirNode):

@@ -1,10 +1,10 @@
 from typing import Optional
 
 from function_id import FunctionIdGenerator
-from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Param, Block, Return, IntLiteral, Identifier, \
-    NodeTag
 from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag, HirLog, StoreLocal, BlockTag, \
-    VarRef, Branch, LoopBlock, Continue, Break, Call, HirExternalLibBlock, ConstStr, ConstBool, StaticAccess
+    VarRef, Branch, LoopBlock, Continue, Break, Call, HirExternalLibBlock, ConstStr, ConstBool, StaticAccess, \
+    FieldValue, CreateStruct
+from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Block, Return, NodeTag
 from pico_error import PicoError
 from pico_types import TypeRegistry
 from symtab import Symbol, SymbolKind, Linkage
@@ -63,6 +63,18 @@ class HirGen:
             module_symbol = Symbol(node.lib_prefix, SymbolKind.Module, 0, self.scope_depth)
             self.global_block.add_symbol(module_symbol)
             self.global_block.add_node(HirExternalLibBlock(node.token, node.lib_prefix, module_symbol, symbols))
+        elif node.tag == NodeTag.StructDecl:
+            fields = []
+            for i, field in enumerate(node.fields):
+                field_type = self._transform_type(field.type)
+                field_name = field.name.value
+                field_symbol = Symbol(field_name, SymbolKind.StructField, field_type)
+                field_symbol.field_index = i
+                fields.append(field_symbol)
+            struct_type = self.type_registry.add_struct(fields)
+            struct_symbol = Symbol(node.name, SymbolKind.Struct, struct_type)
+            struct_symbol.fields = fields
+            self.global_block.add_symbol(struct_symbol)
         else:
             self._gen_function(node)
 
@@ -307,6 +319,13 @@ class HirGen:
             qualifier = self._generate_expr(node.qualifier)
             name = self._generate_expr(node.name)
             return StaticAccess(node.token, qualifier, name)
+        elif node.tag == NodeTag.StructLiteral:
+            name = self._generate_expr(node.name)
+            field_values = []
+            for field in node.values:
+                field_value = self._generate_expr(field.value)
+                field_values.append(FieldValue(field.name, field_value))
+            return CreateStruct(node.token, name, field_values)
         else:
             raise NotImplementedError(f"Expression {node.tag} not implemented")
 

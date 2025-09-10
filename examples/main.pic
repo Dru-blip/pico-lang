@@ -4,10 +4,21 @@ extern @prefix="IO" {
     fn puts(str c)void;
 }
 
+struct Color{
+    int r;
+    int g;
+    int b;
+    int a;
+}
+
 fn main()void{
-    let a="hello";
-    IO::putchar(65);
-    IO::print_int(65);
-    IO::puts(a);
+    let b=1;
+    loop{
+        if(b>10000){
+            break;
+        }
+        let a=Color{.r=255,.b=0,.g=0,.a=0};
+        b=b+1;
+    }
     return;
 }

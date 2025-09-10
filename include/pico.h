@@ -1,8 +1,10 @@
 #pragma once
 
+#include "gc.h"
 #include "uthash.h"
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #define GLUE(a, b) a##b
@@ -16,14 +18,26 @@
 #define TO_PICO_STR(str, len)                                                  \
     ((pico_value){.kind = PICO_STRING, .s_value = str, .size = len})
 
+#define TO_PICO_OBJ(obj_ptr)                                                   \
+    ((pico_value){.kind = PICO_OBJECT, .objref = (obj_ptr)})
+
+#define AS_OBJ(pico_val) ((pico_val)->objref)
+
 #define AS_INT(pico_value) ((pico_value)->i_value)
 #define AS_STR(pico_value) ((pico_value)->s_value)
 
 #define PICO_POP_INT(vm_ptr) ((vm_ptr)->stack[--((vm_ptr)->sp)].i_value)
 #define PICO_POP_STR(vm_ptr) ((vm_ptr)->stack[--((vm_ptr)->sp)].s_value)
+#define PICO_POP_OBJ(vm_ptr) ((vm_ptr)->stack[--((vm_ptr)->sp)].objref)
+
+#define PICO_OBJ_FIELD_PTR(obj, index) (&((obj)->fields[index]))
+#define PICO_OBJ_FIELD(obj, index) ((obj)->fields[index])
+
+#define PICO_OBJECT_SET_FIELD(obj, field_index, value)                         \
+    (obj)->fields[(field_index)] = (value);
 
 #define PICO_MAX_FRAMES 512
-#define PICO_MAX_STACK 2048
+#define PICO_MAX_STACK_SIZE 2048
 #define PICO_FRAME_NEW(func, stk, parent_frame)                                \
     (pico_frame) {                                                             \
         .function = (func), .stack = (stk), .ip = 0,                           \
@@ -54,6 +68,7 @@ typedef enum pico_value_kind {
     PICO_INT,
     PICO_BOOL,
     PICO_STRING,
+    PICO_OBJECT,
 } pico_value_kind_t;
 
 typedef struct pico_value {
@@ -64,9 +79,16 @@ typedef struct pico_value {
             puint size;
             pstr s_value;
         };
+        struct pico_object *objref;
         pbool boolean;
     };
 } pico_value;
+
+typedef struct pico_object {
+    pbyte num_fields;
+    pbyte is_forwarded;
+    pico_value fields[];
+} pico_object;
 
 static pico_value pico_true = (pico_value){.kind = PICO_BOOL, .boolean = true};
 static pico_value pico_false =
@@ -98,7 +120,7 @@ typedef struct pico_vm {
     pulong fc;
     pulong sp;
     pico_frame frames[PICO_MAX_FRAMES];
-    pico_value stack[PICO_MAX_STACK];
+    pico_value stack[PICO_MAX_STACK_SIZE];
     pico_value *constants;
     pico_function *functions;
     puint main_function_index;
@@ -107,6 +129,7 @@ typedef struct pico_vm {
 struct pico_env {
     pico_vm *vm;
     pico_frame *frame;
+    pico_gc *gc;
     struct native_fn_entry *native_functions;
     void **lib_handles;
 };
@@ -133,6 +156,10 @@ void pico_vm_shutdown(pico_vm *vm);
 void pico_load_libraries(pico_env *env, const char *lib_name);
 void pico_deinit_libraries(void **lib_handles);
 
+/**
+ * Move these functions to a separate source file.
+ */
+/**--------------------------------------------- */
 static inline void pico_register_native_function(pico_env *env,
                                                  const char *name,
                                                  pico_native_fn handle) {
@@ -143,3 +170,37 @@ static inline void pico_register_native_function(pico_env *env,
     HASH_ADD_KEYPTR(hh, env->native_functions, entry->name, strlen(entry->name),
                     entry);
 }
+
+static inline pico_object *pico_env_alloc_object(pico_env *env,
+                                                 puint num_fields) {
+
+    pico_object *obj = (pico_object *)pico_gc_alloc(env->gc, num_fields);
+    if (!obj) {
+        pico_gc_collect(env->gc, env);
+        flip_spaces(env->gc);
+        obj = (pico_object *)pico_gc_alloc(env->gc, num_fields);
+        if (!obj) {
+            if (!pico_gc_extend_spaces(env->gc, env)) {
+                fprintf(
+                    stderr,
+                    "PicoGC: failed to allocate object (%u fields) even after "
+                    "GC and heap extension (heap=%zu bytes).\n",
+                    num_fields, env->gc->heap_size);
+                pico_env_deinit(env);
+                exit(EXIT_FAILURE);
+            }
+            obj = (pico_object *)pico_gc_alloc(env->gc, num_fields);
+            if (!obj) {
+                fprintf(
+                    stderr,
+                    "PicoGC: failed to allocate object (%u fields) even after "
+                    "GC and heap extension (heap=%zu bytes).\n",
+                    num_fields, env->gc->heap_size);
+                pico_env_deinit(env);
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+    return obj;
+}
+/**--------------------------------------------- */

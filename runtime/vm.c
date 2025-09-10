@@ -11,6 +11,7 @@
 
 #define PUSH(vm, value) vm->stack[vm->sp++] = value;
 #define POP(vm) vm->stack[--vm->sp]
+#define PEEK(vm) &vm->stack[vm->sp - 1]
 
 #define BINARY_ARITH_INT(vm, op)                                               \
     const pico_value b = POP(vm);                                              \
@@ -199,6 +200,19 @@ frame_start:
                 goto frame_start;
             }
             goto frame_end;
+        }
+        case OP_ALLOCA_STRUCT: {
+            puint num_fields = READ_TWO_BYTES();
+            pico_object *obj = pico_env_alloc_object(env, num_fields);
+            PUSH(vm, TO_PICO_OBJ(obj));
+            break;
+        }
+        case OP_SET_FIELD: {
+            puint field_index = READ_TWO_BYTES();
+            pico_value value = POP(vm);
+            pico_value *obj = PEEK(vm);
+            PICO_OBJECT_SET_FIELD(obj->objref, field_index, value);
+            break;
         }
         }
     }

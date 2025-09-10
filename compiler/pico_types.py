@@ -6,13 +6,15 @@ class TypeKind:
     Long = "long"
     Str = "Str"
     Function = "function"
+    Struct = "Struct"
 
 
 class TypeObject:
-    def __init__(self, kind, *, ret_type=0, params=None, id=0):
+    def __init__(self, kind, *, ret_type=0, params=None, fields=None, id=0):
         self.kind = kind
         self.ret_type = ret_type
         self.params = params or []
+        self.fields = fields or []
         self.id = id
 
 
@@ -89,8 +91,7 @@ class TypeRegistry:
 
     def add_function(self, ret_type, params=None):
         params = params or []
-        # check for existing function type
-        for i, t in enumerate(self.types[4:], start=4):
+        for i, t in enumerate(self.types[6:], start=6):
             if not t or t.kind != TypeKind.Function:
                 continue
             if t.ret_type != ret_type or len(t.params) != len(params):
@@ -100,6 +101,20 @@ class TypeRegistry:
                 return i
 
         new_type = TypeObject(TypeKind.Function, ret_type=ret_type, params=params, id=TypeRegistry.type_counter)
+        self.types.append(new_type)
+        TypeRegistry.type_counter += 1
+        return new_type.id
+
+    def add_struct(self, fields):
+        fields = fields or []
+        for i, t in enumerate(self.types[6:], start=6):
+            if not t or t.kind != TypeKind.Struct:
+                continue
+
+            match = all(ft.type == f.type for ft, f in zip(t.fields, fields))
+            if match:
+                return i
+        new_type = TypeObject(TypeKind.Struct, fields=fields, id=TypeRegistry.type_counter)
         self.types.append(new_type)
         TypeRegistry.type_counter += 1
         return new_type.id

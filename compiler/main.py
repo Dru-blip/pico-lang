@@ -6,9 +6,10 @@ from ir import IrModule
 from parser import Parser
 from pico_error import PicoError
 from sema import Sema
-from tokenizer import Token
 
 
+# TODO: emit type descriptors in bytecode
+# TODO: introduce nil type
 # TODO: while and for loops.
 # TODO: increment and decrement operators.
 # TODO: Compound assignments.
@@ -26,8 +27,8 @@ def main(filename: str):
         module.build(block)
         binary = module.emit()
 
-        print("Global Constant Table:", module.const_table)
-        print("Binary:", list(binary))
+        # print("Global Constant Table:", module.const_table)
+        # print("Binary:", list(binary))
         with open("out.pbc", "wb") as f:
             f.write(binary)
     except PicoError as pe:
@@ -35,5 +36,5 @@ def main(filename: str):
 
 
 if __name__ == '__main__':
-    main("test.pco")
-    # typer.run(main)
+    # main("test.pco")
+    typer.run(main)

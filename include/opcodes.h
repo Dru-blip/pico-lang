@@ -37,4 +37,7 @@
 #define OP_CALL 0x68
 #define OP_CALL_EXTERN 0x6A
 
+#define OP_ALLOCA_STRUCT 0x70
+#define OP_SET_FIELD 0x71
+
 #define OP_LOG 0x85

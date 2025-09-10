@@ -73,6 +73,10 @@ static const opcode_info opcode_table[] = {
     {OP_RET, "Ret", 0, NULL},
     {OP_CALL, "Call", 2, print_operand_two},
     {OP_CALL_EXTERN, "CallExtern", 2, print_operand_two},
+
+    {OP_ALLOCA_STRUCT, "AllocaStruct", 2, print_operand_two},
+    {OP_SET_FIELD, "SetField", 2, print_operand_two},
+
     {OP_LOG, "Log", 0, NULL},
 
     {0xFF, "unknown", 0, NULL} // sentinel

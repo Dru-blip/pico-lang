@@ -1,9 +1,11 @@
 # semantic analyzer
+
+
 from hir import Cast, HirNodeTag, BoolCast
 from pico_ast import OpTag
 from pico_error import PicoError
 from pico_types import TypeRegistry
-from symtab import Symbol
+from symtab import Symbol, SymbolKind
 
 
 class Sema:
@@ -112,8 +114,34 @@ class Sema:
             return self._analyze_call(node)
         elif kind == HirNodeTag.StoreLocal:
             return self._analyze_storelocal(node)
+        elif kind == HirNodeTag.CreateStruct:
+            return self._analyze_create_struct(node)
         else:
             raise Exception(f"implementation error: cannot analyze node: {node.kind} yet")
+
+    def _analyze_create_struct(self, node):
+        if node.name.kind != HirNodeTag.VarRef:
+            raise PicoError("Invalid struct literal", node.token)
+        if node.name.symbol.kind != SymbolKind.Struct:
+            raise PicoError("Invalid struct literal", node.token)
+        field_symbols = node.name.symbol.fields
+        for i, field in enumerate(node.values):
+            result = next(
+                ((i, sym) for i, sym in enumerate(field_symbols) if field.name.value == sym.name),
+                (None, None)
+            )
+            match_index, match_sym = result
+            if not match_sym:
+                raise PicoError(f"unknown field name {field.name.value} in struct {node.name.symbol.name}", field.name)
+            field_type = self._analyze_expr(field.value)
+            result_type = self.type_registry.get_assignment_type(field_type,
+                                                                 match_sym.type)
+            if result_type == TypeRegistry.NoneType:
+                raise PicoError(
+                    f"Field type mismatch: expected {self.type_registry.get_type(match_sym.type).kind} got {self.type_registry.get_type(field_type).kind}",
+                    field.name)
+            field.field_index = match_sym.field_index
+        return node.name.symbol.type
 
     def _analyze_call(self, node):
         if node.calle.kind != HirNodeTag.VarRef and node.calle.kind != HirNodeTag.StaticAccess:

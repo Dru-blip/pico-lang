@@ -1,5 +1,5 @@
-from pico_ast import OpTag
 from hir import FunctionBlock, HirBlock, HirNodeTag
+from pico_ast import OpTag
 from symtab import Linkage
 
 # data
@@ -43,6 +43,10 @@ OP_JMP = 0x62
 OP_RET = 0x66
 OP_CALL = 0x68
 OP_CALL_EXTERN = 0x6A
+
+# structs
+OP_ALLOCA_STRUCT = 0x70
+OP_SET_FIELD = 0x71
 
 OP_LOG = 0x85
 
@@ -142,6 +146,13 @@ class IrModule:
             else:
                 code.append(OP_CALL)
                 code += expr.function_symbol.function_id.to_bytes(2, "little")
+        elif expr.kind == HirNodeTag.CreateStruct:
+            code.append(OP_ALLOCA_STRUCT)
+            code += len(expr.name.symbol.fields).to_bytes(2, "little")
+            for field in expr.values:
+                self.compile_expr(field.value, code)
+                code.append(OP_SET_FIELD)
+                code += field.field_index.to_bytes(2, "little")
         else:
             raise ValueError(f"Unsupported expression kind: {expr.kind}")
 

@@ -1,3 +1,4 @@
+#include "gc.h"
 #include "pico.h"
 #include "stb_ds.h"
 #include <dlfcn.h>
@@ -8,12 +9,14 @@ void pico_env_init(pico_env *env) {
     env->lib_handles = nullptr;
     env->native_functions = nullptr;
     env->vm = malloc(sizeof(pico_vm));
+    env->gc = pico_gc_new(1024);
 }
 
 void pico_env_deinit(pico_env *env) {
     pico_deinit_libraries(env->lib_handles);
     arrfree(env->lib_handles);
     pico_vm_shutdown(env->vm);
+    pico_gc_destroy(env->gc);
     free(env->vm);
 }
 

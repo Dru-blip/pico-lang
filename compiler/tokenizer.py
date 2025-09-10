@@ -1,5 +1,5 @@
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 from typing import List, Dict
 
 
@@ -58,6 +58,7 @@ class TokenTag(str, Enum):
 
     CARET = "CARET"
     AT = "AT"
+    DOT = "DOT"
 
     KW_FN = "KW_FN"
     KW_LET = "KW_LET"
@@ -73,6 +74,7 @@ class TokenTag(str, Enum):
     KW_EXTERN = "KW_EXTERN"
     KW_TRUE = "KW_TRUE",
     KW_FALSE = "KW_FALSE"
+    KW_STRUCT = "KW_STRUCT"
 
 
 @dataclass
@@ -110,6 +112,7 @@ class Tokenizer:
         "continue": TokenTag.KW_CONTINUE,
         "true": TokenTag.KW_TRUE,
         "false": TokenTag.KW_FALSE,
+        "struct": TokenTag.KW_STRUCT,
     }
 
     def __init__(self, source: str, filename: str):
@@ -293,6 +296,9 @@ class Tokenizer:
             case "@":
                 self._advance()
                 tok.tag = TokenTag.AT
+            case ".":
+                self._advance()
+                tok.tag = TokenTag.DOT
             case '"':
                 self._advance()
                 value_chars = []

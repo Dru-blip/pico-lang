@@ -1,5 +1,3 @@
-from pico_error import PicoSyntaxError
-from tokenizer import Tokenizer, TokenTag
 from pico_ast import (
     FunctionPrototype,
     FunctionDeclaration,
@@ -12,8 +10,10 @@ from pico_ast import (
     Param,
     Program,
     Assignment, BinOp, Log, VarDecl, ExprStmt, IfStmt, LoopStmt, Continue, Break, Call, StrLiteral, ExternLibBlock,
-    BoolLiteral, StaticAccess,
+    BoolLiteral, StaticAccess, StructDecl, StructField, StructLiteral, FieldValue,
 )
+from pico_error import PicoSyntaxError
+from tokenizer import Tokenizer, TokenTag
 
 
 class OperatorKind:
@@ -67,6 +67,7 @@ class Parser:
 
             TokenTag.COLON_COLON: Operator(OperatorKind.Postfix, 97, 98, OpTag.StaticAccess, StaticAccess),
             TokenTag.LPAREN: Operator(OperatorKind.Postfix, 99, 100, OpTag.Call, Call),
+            TokenTag.LBRACE: Operator(OperatorKind.Postfix, 99, 100, OpTag.StructLiteral, StructLiteral),
         }
 
     @staticmethod
@@ -106,11 +107,26 @@ class Parser:
     def _parse_decl(self):
         if self._check(TokenTag.KW_EXTERN):
             return self._parse_extern_lib_block()
-
         if self._check(TokenTag.KW_FN):
             return self._parse_function_declaration()
+        if self._check(TokenTag.KW_STRUCT):
+            return self._parse_struct_decl()
 
         raise PicoSyntaxError("invalid syntax", self.current_token)
+
+    def _parse_struct_decl(self):
+        main_token = self._next_token()
+        name = self._expect_token(TokenTag.ID)
+        self._expect_token(TokenTag.LBRACE)
+        fields = []
+        while not self._check(TokenTag.RBRACE):
+            field_token = self.current_token
+            field_type = self._parse_type_expr()
+            field_name = self._expect_token(TokenTag.ID)
+            fields.append(StructField(field_token, field_type, field_name))
+            self._expect_token(TokenTag.SEMICOLON)
+        self._next_token()
+        return StructDecl(main_token, name.value, fields)
 
     def _parse_extern_lib_block(self):
         main_token = self._next_token()
@@ -263,6 +279,19 @@ class Parser:
             self._advance()
             name = self._parse_primary_expr()
             return StaticAccess(main_token, lhs, name)
+        if op_tag == OpTag.StructLiteral:
+            self._advance()
+            field_values = []
+            while not self._check(TokenTag.RBRACE):
+                self._expect_token(TokenTag.DOT)
+                name = self._expect_token(TokenTag.ID)
+                self._expect_token(TokenTag.EQUAL)
+                value = self._parse_expr()
+                if self._check(TokenTag.COMMA):
+                    self._expect_token(TokenTag.COMMA)
+                field_values.append(FieldValue(name, value))
+            self._advance()
+            return StructLiteral(main_token, lhs, field_values)
         return None
 
     def _parse_call_args(self):
