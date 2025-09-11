@@ -356,6 +356,9 @@ class HirGen:
             return ConstBool(node.value)
         elif node.tag == NodeTag.Identifier:
             return VarRef(node.token, node.name)
+        elif node.tag == NodeTag.UnOp:
+            expr = self._generate_expr(node.expr)
+            return UnOp(node.token, node.op_tag, expr)
         elif node.tag == NodeTag.BinOp:
             lhs = self._generate_expr(node.lhs)
             rhs = self._generate_expr(node.rhs)

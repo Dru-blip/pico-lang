@@ -44,6 +44,8 @@ static const opcode_info opcode_table[] = {
     {OP_ISTORE, "IStore", 2, print_operand_two},
     {OP_ILOAD, "Iload", 2, print_operand_two},
     {OP_LOAD, "Load", 2, print_operand_two},
+    {OP_IINC, "IInc", 2, print_operand_two},
+    {OP_IDEC, "IDec", 2, print_operand_two},
 
     {OP_IADD, "IAdd", 0, nullptr},
     {OP_ISUB, "ISub", 0, nullptr},
@@ -84,6 +86,8 @@ static const opcode_info opcode_table[] = {
     {OP_ALLOCA_STRUCT, "AllocaStruct", 2, print_operand_two},
     {OP_SET_FIELD, "SetField", 2, print_operand_two},
     {OP_LOAD_FIELD, "LoadField", 2, print_operand_two},
+    {OP_IFIELD_INC, "IFieldInc", 2, print_operand_two},
+    {OP_IFIELD_DEC, "IFieldDec", 2, print_operand_two},
 
     {OP_LOG, "Log", 0, nullptr},
 

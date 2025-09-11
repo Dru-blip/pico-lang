@@ -293,7 +293,21 @@ class Sema:
                 raise PicoError(f"cannot perform not on {self.type_registry.get_type(expr_type).kind}", node.token)
             if expr_type != result_type:
                 node.expr = BoolCast(node.expr.token, node.expr)
-            return TypeRegistry.BoolType
+            node.type_id = TypeRegistry.BoolType
+            return node.type_id
+
+        if (node.op_tag == OpTag.PostIncrement or node.op_tag == OpTag.PreIncrement
+                or node.op_tag == OpTag.PostDecrement or node.op_tag == OpTag.PreDecrement):
+            if node.expr.kind != HirNodeTag.VarRef and node.expr.kind != HirNodeTag.FieldAccess:
+                raise PicoError(f"invalid lvalue", node.token)
+            op_name = "increment" if node.op_tag in [OpTag.PreIncrement, OpTag.PostIncrement] else "decrement"
+            expr_type = self._analyze_expr(node.expr)
+            if not self.type_registry.is_integer_type(expr_type):
+                raise PicoError(
+                    f"{op_name} operator requires integer type value but found {self.type_registry.get_type(expr_type).kind}",
+                    node.token)
+            node.type_id = expr_type
+            return expr_type
 
         return TypeRegistry.NoneType
 

@@ -11,6 +11,7 @@ from pico_ast import (
     Program,
     Assignment, BinOp, Log, VarDecl, ExprStmt, IfStmt, LoopStmt, Continue, Break, Call, StrLiteral, ExternLibBlock,
     BoolLiteral, StaticAccess, StructDecl, StructField, StructLiteral, FieldValue, FieldAccess, Cast, WhileLoopStmt,
+    UnOp,
 )
 from pico_error import PicoSyntaxError
 from tokenizer import Tokenizer, TokenTag
@@ -69,6 +70,8 @@ class Parser:
             TokenTag.LPAREN: Operator(OperatorKind.Postfix, 99, 100, OpTag.Call, Call),
             TokenTag.LBRACE: Operator(OperatorKind.Postfix, 99, 100, OpTag.StructLiteral, StructLiteral),
             TokenTag.DOT: Operator(OperatorKind.Postfix, 99, 100, OpTag.FieldAccess, FieldAccess),
+            TokenTag.PLUS_PLUS: Operator(OperatorKind.Postfix, 99, 100, OpTag.PostIncrement, UnOp),
+            TokenTag.MINUS_MINUS: Operator(OperatorKind.Postfix, 99, 100, OpTag.PostDecrement, UnOp),
 
             TokenTag.KW_AS: Operator(OperatorKind.Postfix, 103, 105, OpTag.Cast, Cast),
         }
@@ -267,7 +270,7 @@ class Parser:
         return Log(main_token, expr)
 
     def _parse_expr(self, min_bp=0):
-        lhs = self._parse_primary_expr()
+        lhs = self._parse_prefix_expr()
         while True:
             op_info = self.operator_table.get(self.current_token.tag)
             if not op_info or op_info.lbp < min_bp:
@@ -311,6 +314,9 @@ class Parser:
             self._advance()
             target_type = self._parse_type_expr()
             return Cast(main_token, lhs, target_type)
+        if op_tag == OpTag.PostIncrement:
+            self._advance()
+            return UnOp(main_token, op_tag, lhs)
         return None
 
     def _parse_call_args(self):
@@ -321,6 +327,25 @@ class Parser:
                 self._advance()
         self._advance()
         return args
+
+    def _parse_prefix_expr(self):
+        token = self.current_token
+        if token.tag == TokenTag.PLUS_PLUS:
+            self._advance()
+            expr = self._parse_prefix_expr()
+            return UnOp(token, OpTag.PreIncrement, expr)
+
+        if token.tag == TokenTag.MINUS_MINUS:
+            self._advance()
+            expr = self._parse_prefix_expr()
+            return UnOp(token, OpTag.PreDecrement, expr)
+
+        if token.tag == TokenTag.NOT:
+            self._advance()
+            expr = self._parse_prefix_expr()
+            return UnOp(token, OpTag.Not, expr)
+
+        return self._parse_primary_expr()
 
     def _parse_primary_expr(self):
         token = self._next_token()

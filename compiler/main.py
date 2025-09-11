@@ -12,8 +12,6 @@ from sema import Sema
 # TODO: introduce nil type.
 # TODO: for loops.
 # TODO: else if and switch statements.
-# TODO: increment and decrement operators.
-# TODO: logical not operator.
 # TODO: Compound assignments.
 # TODO: Ternary expressions
 # TODO: unsigned integers,remaining signed integers(long,byte,char,byte).
@@ -31,8 +29,8 @@ def main(filename: str):
             module.build(block)
             binary = module.emit()
 
-            print("Global Constant Table:", module.const_table)
-            print("Binary:", list(binary))
+            # print("Global Constant Table:", module.const_table)
+            # print("Binary:", list(binary))
             with open("out.pbc", "wb") as f:
                 f.write(binary)
         except PicoError as pe:

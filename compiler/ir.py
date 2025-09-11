@@ -12,6 +12,8 @@ OP_STORE = 0x09
 OP_ISTORE = 0x0A
 OP_ILOAD = 0x0B
 OP_LOAD = 0x0C
+OP_IINC = 0x0D
+OP_IDEC = 0x0E
 
 # integer arithmetic
 OP_IADD = 0x20
@@ -56,6 +58,8 @@ OP_VOID_CALL_EXTERN = 0x6B
 OP_ALLOCA_STRUCT = 0x70
 OP_SET_FIELD = 0x71
 OP_LOAD_FIELD = 0x72
+OP_IFIELD_INC = 0x73
+OP_IFIELD_DEC = 0x74
 
 OP_LOG = 0x85
 
@@ -147,8 +151,45 @@ class IrModule:
             self.compile_expr(expr.rhs, code)
             code.append(optag_to_opcode[expr.op_tag])
         elif expr.kind == HirNodeTag.UnOp:
-            self.compile_expr(expr.expr, code)
-            code.append(optag_to_opcode[expr.op_tag])
+            op_map = {
+                OpTag.PreIncrement: (OP_IINC, OP_IFIELD_INC),
+                OpTag.PreDecrement: (OP_IDEC, OP_IFIELD_DEC),
+                OpTag.PostIncrement: (OP_IINC, OP_IFIELD_INC),
+                OpTag.PostDecrement: (OP_IDEC, OP_IFIELD_DEC),
+            }
+
+            if expr.op_tag in op_map:
+                var_op, field_op = op_map[expr.op_tag]
+
+                if expr.expr.kind == HirNodeTag.VarRef:
+                    offset = expr.expr.symbol.local_offset.to_bytes(2, "little")
+                    if expr.op_tag in (OpTag.PostIncrement, OpTag.PostDecrement):
+                        code.append(OP_LOAD)
+                        code += offset
+                        code.append(var_op)
+                        code += offset
+                    else:
+                        code.append(var_op)
+                        code += offset
+                        code.append(OP_LOAD)
+                        code += offset
+
+                else:
+                    index = expr.expr.field_index.to_bytes(2, "little")
+                    if expr.op_tag in (OpTag.PostIncrement, OpTag.PostDecrement):
+                        code.append(OP_LOAD_FIELD)
+                        code += index
+                        code.append(field_op)
+                        code += index
+                    else:
+                        code.append(field_op)
+                        code += index
+                        code.append(OP_LOAD_FIELD)
+                        code += index
+            else:
+                self.compile_expr(expr.expr, code)
+                code.append(optag_to_opcode[expr.op_tag])
+
         elif expr.kind == HirNodeTag.Call:
             is_void_call = expr.type_id == TypeRegistry.VoidType
             for arg in expr.args:

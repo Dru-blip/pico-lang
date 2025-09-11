@@ -8,6 +8,8 @@
 #define OP_ISTORE 0x0A
 #define OP_ILOAD 0x0B
 #define OP_LOAD 0x0C
+#define OP_IINC 0x0D
+#define OP_IDEC 0x0E
 
 #define OP_IADD 0x20
 #define OP_ISUB 0x21
@@ -48,5 +50,8 @@
 #define OP_ALLOCA_STRUCT 0x70
 #define OP_SET_FIELD 0x71
 #define OP_LOAD_FIELD 0x72
+
+#define OP_IFIELD_INC 0x73
+#define OP_IFIELD_DEC 0x74
 
 #define OP_LOG 0x85

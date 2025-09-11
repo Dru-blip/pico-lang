@@ -31,6 +31,10 @@ class OpTag:
     Cast = "Cast"
 
     Not = "Not"
+    PostIncrement = "PostIncrement"
+    PostDecrement = "PostDecrement"
+    PreIncrement = "PreIncrement"
+    PreDecrement = "PreDecrement"
 
 
 class NodeTag(str, Enum):
@@ -42,6 +46,7 @@ class NodeTag(str, Enum):
     StrLiteral = "StrLiteral"
 
     BinOp = "BinOp"
+    UnOp = "UnOp"
 
     Not = "Not"
 
@@ -260,3 +265,8 @@ class Identifier(Expr):
 class BinOp(Expr):
     def __init__(self, token, op_tag, lhs, rhs):
         super().__init__(NodeTag.BinOp, token=token, op_tag=op_tag, lhs=lhs, rhs=rhs)
+
+
+class UnOp(Expr):
+    def __init__(self, token, op_tag, expr):
+        super().__init__(NodeTag.UnOp, token=token, op_tag=op_tag, expr=expr)

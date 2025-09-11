@@ -2,7 +2,7 @@
 #include "pico.h"
 #include "stb_ds.h"
 #include "uthash.h"
-#include <stdio.h>
+
 #include <stdlib.h>
 
 #define READ_OPCODE() frame->function->code[frame->ip++]
@@ -50,6 +50,16 @@ frame_start:
         case OP_LOAD: {
             puint index = READ_TWO_BYTES();
             PUSH(vm, frame->locals[index]);
+            break;
+        }
+        case OP_IINC: {
+            puint index = READ_TWO_BYTES();
+            frame->locals[index].i_value++;
+            break;
+        }
+        case OP_IDEC: {
+            puint index = READ_TWO_BYTES();
+            frame->locals[index].i_value--;
             break;
         }
         case OP_IADD: {
@@ -250,6 +260,18 @@ frame_start:
             puint field_index = READ_TWO_BYTES();
             pico_value obj = POP(vm);
             PUSH(vm, PICO_OBJ_FIELD(obj.objref, field_index));
+            break;
+        }
+        case OP_IFIELD_INC: {
+            puint field_index = READ_TWO_BYTES();
+            pico_object *obj = POP(vm).objref;
+            (&obj->fields[field_index])->i_value++;
+            break;
+        }
+        case OP_IFIELD_DEC: {
+            puint field_index = READ_TWO_BYTES();
+            pico_object *obj = POP(vm).objref;
+            (&obj->fields[field_index])->i_value--;
             break;
         }
         }
