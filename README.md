@@ -185,6 +185,13 @@ struct instances by default are heap allocated and garbage collected user does n
 every field has to be initialized, compiler will not throw any error if not initialized,
 ==access them at runtime can cause UB(undefined behavior) or could crash the program.==
 
+struct fields are accessed with `.` operator
+
+```
+let c = Color{ .r=255, .g=161, .b=0, .a=255 };
+log c.r;
+```
+
 ### 3.Variables
 
 declared using `let` keyword
@@ -208,3 +215,50 @@ fn add(int a, int b) int {
 ```
 
 parameter types and return type specifiers are mandatory.
+
+### 5.Functions
+
+1.Loops
+
+- infinite loop
+
+```
+loop {
+    // iterate forever
+}
+```
+
+2.If else
+
+```
+if condition {
+    // code block
+} else {
+    // code block
+}
+```
+
+### 6.Casting
+
+type casting is done using `as` keyword
+
+```
+let x = 10 as float;
+```
+
+### 7.Namespaces & External Libraries
+
+External functions are declared in extern blocks:
+
+```
+extern @prefix="raylib" {
+    fn init_window(int width, int height, str title) void;
+}
+
+```
+
+Functions are accessed with prefix::function
+
+```
+raylib::init_window(800, 600, "Hello");
+```

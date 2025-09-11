@@ -8,7 +8,6 @@ from pico_error import PicoError
 from sema import Sema
 
 
-# TODO: type cast
 # TODO: emit type descriptors in bytecode.
 # TODO: introduce nil type.
 # TODO: while and for loops.
