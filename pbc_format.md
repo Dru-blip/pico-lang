@@ -1,7 +1,7 @@
 ### this document describes the pico bytecode file format
 
 ```
-PCB{
+PBC{
   header: Header
   main_function:MainFunction
   constants:Constants

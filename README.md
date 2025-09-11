@@ -60,3 +60,80 @@ extern @prefix="raylib"{
     fn draw_text(str text, int posX, int posY, int fontSize,Color color)void;
 }
 ```
+
+## Getting Pico
+
+Currently, Pico provides prebuilt binaries for **Linux x86-64 only**. Support for other platforms has been planned. You can get Pico either by **downloading prebuilt binaries** or by **compiling from source**.
+
+---
+
+### Option 1: Download Prebuilt Binaries (Linux x86-64)
+
+The easiest way is to use the **precompiled Pico VM and example programs**.
+
+**Download binaries:**
+[pico_x86-64_linux.zip](https://github.com/Dru-blip/pico-lang/releases)
+
+extract the zip file.
+
+**contents of zip file**:
+
+- picoc (executable for compiler)
+- pico (executable containing runtime)
+- libraylib.so (library containing raylib functions)
+- libpio.so (library containing io functions)
+
+place the .so files in a directory of your choice.
+see **Usage** section to compile and run programs.
+
+### Option 2: Compile from Source
+
+If you want to compile Pico from source, you can follow these steps:
+
+make sure you have the following prerequisites installed:
+
+- make
+- gcc/clang versions which can compiler c23 standard
+- Python 3.12.3 (version im using to build pico compiler)
+- raylib (to run the example pico) can download prebuild native library from releases page or see [raylib documentation](https://www.raylib.com/)
+
+1. Clone the Pico repository:
+
+   ```bash
+   git clone https://github.com/Dru-blip/pico-lang.git
+   ```
+
+2. Navigate to the project directory:
+
+   ```bash
+   cd pico-lang
+   ```
+
+3. Build the project using Make:
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install pyinstaller typer
+   make
+   ```
+   make will create two directories: `out` and `dist`. The `out` directory contains the pico runtime(`pico`), while the `dist` directory contains the pico compiler (`picoc`).
+
+### Usage
+
+**Compile a Pico source file (`.pic`) into bytecode (`.pbc`):**
+by default compiler will emit out.pbc file in current directory
+
+```bash
+#current implementation only support single file compilation
+./picoc <filename>.pico
+
+```
+
+for running a pico bytecode file
+
+```cmd
+  pico  <*.pbc> <path to libs>
+
+ # example
+  pico out.pbc ./lib
+```
