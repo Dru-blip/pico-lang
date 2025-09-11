@@ -22,6 +22,7 @@ class HirNodeTag(Enum):
     Return = "Return"
     Log = "Log",
     Cast = "Cast",
+    UnOp = "UnOp"
     BoolCast = "BoolCast"
     VarRef = "VarRef"
     StoreLocal = "StoreLocal"
@@ -202,6 +203,11 @@ class Call(HirNode):
 class BinOp(HirNode):
     def __init__(self, token, op_tag, lhs, rhs):
         super().__init__(HirNodeTag.BinOp, token=token, op_tag=op_tag, lhs=lhs, rhs=rhs)
+
+
+class UnOp(HirNode):
+    def __init__(self, token, op_tag, expr):
+        super().__init__(HirNodeTag.UnOp, token=token, op_tag=op_tag, expr=expr)
 
 
 class ConstInt(HirNode):

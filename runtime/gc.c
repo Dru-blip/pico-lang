@@ -89,7 +89,6 @@ static pico_object *gc_copy_object(pico_gc *gc, pico_object *obj) {
     pico_object *new_obj = (pico_object *)gc->to_space.alloc_ptr;
     memcpy(new_obj, obj, size);
     gc->to_space.alloc_ptr += size;
-    new_obj->is_forwarded = true;
     return new_obj;
 }
 
@@ -114,5 +113,15 @@ void pico_gc_collect(pico_gc *gc, pico_env *env) {
         if (value->kind == PICO_OBJECT) {
             pico_gc_copy_root(gc, value);
         }
+    }
+
+    pico_frame *temp_frame = env->frame;
+    while (temp_frame) {
+        for (puint i = 0; i < temp_frame->function->local_count; i++) {
+            if (temp_frame->locals[i].kind == PICO_OBJECT) {
+                pico_gc_copy_root(gc, &temp_frame->locals[i]);
+            }
+        }
+        temp_frame = temp_frame->parent;
     }
 }

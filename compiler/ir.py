@@ -34,6 +34,7 @@ OP_ILE = 0x2F
 OP_IGT = 0x30
 OP_IGE = 0x31
 
+OP_BNOT = 0x55
 # casting
 OP_B2I = 0x59
 OP_B2L = 0x5A
@@ -78,6 +79,8 @@ optag_to_opcode = {
     OpTag.GTE: OP_IGE,
     OpTag.EQ: OP_IEQ,
     OpTag.NEQ: OP_INE,
+
+    OpTag.Not: OP_BNOT,
 }
 
 bool_cast_table = {3: OP_I2B, 4: OP_L2B}
@@ -142,6 +145,9 @@ class IrModule:
         elif expr.kind == HirNodeTag.BinOp:
             self.compile_expr(expr.lhs, code)
             self.compile_expr(expr.rhs, code)
+            code.append(optag_to_opcode[expr.op_tag])
+        elif expr.kind == HirNodeTag.UnOp:
+            self.compile_expr(expr.expr, code)
             code.append(optag_to_opcode[expr.op_tag])
         elif expr.kind == HirNodeTag.Call:
             is_void_call = expr.type_id == TypeRegistry.VoidType

@@ -10,7 +10,7 @@ from sema import Sema
 
 # TODO: emit type descriptors in bytecode.
 # TODO: introduce nil type.
-# TODO: while and for loops.
+# TODO: for loops.
 # TODO: else if and switch statements.
 # TODO: increment and decrement operators.
 # TODO: logical not operator.
@@ -30,9 +30,9 @@ def main(filename: str):
             module = IrModule()
             module.build(block)
             binary = module.emit()
-            #
-            # print("Global Constant Table:", module.const_table)
-            # print("Binary:", list(binary))
+
+            print("Global Constant Table:", module.const_table)
+            print("Binary:", list(binary))
             with open("out.pbc", "wb") as f:
                 f.write(binary)
         except PicoError as pe:

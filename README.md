@@ -183,7 +183,7 @@ let c = Color{ .r=255, .g=161, .b=0, .a=255 };
 
 struct instances by default are heap allocated and garbage collected user does not have to worry about memory management.
 every field has to be initialized, compiler will not throw any error if not initialized,
-==access them at runtime can cause UB(undefined behavior) or could crash the program.==
+access them at runtime can cause UB(undefined behavior) or could crash the program.
 
 struct fields are accessed with `.` operator
 
@@ -226,6 +226,16 @@ parameter types and return type specifiers are mandatory.
 loop {
     // iterate forever
 }
+```
+
+- while loop
+
+```
+    let a=1;
+    while(a<20){
+        a=a+1;
+    }
+    log a;
 ```
 
 2.If else

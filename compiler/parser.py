@@ -10,7 +10,7 @@ from pico_ast import (
     Param,
     Program,
     Assignment, BinOp, Log, VarDecl, ExprStmt, IfStmt, LoopStmt, Continue, Break, Call, StrLiteral, ExternLibBlock,
-    BoolLiteral, StaticAccess, StructDecl, StructField, StructLiteral, FieldValue, FieldAccess, Cast,
+    BoolLiteral, StaticAccess, StructDecl, StructField, StructLiteral, FieldValue, FieldAccess, Cast, WhileLoopStmt,
 )
 from pico_error import PicoSyntaxError
 from tokenizer import Tokenizer, TokenTag
@@ -195,6 +195,8 @@ class Parser:
             return self._parse_if_stmt()
         elif self._check(TokenTag.KW_LOOP):
             return self._parse_loop_stmt()
+        elif self._check(TokenTag.KW_WHILE):
+            return self._parse_while_loop_stmt()
         elif self._check(TokenTag.KW_CONTINUE):
             return self._parse_continue()
         elif self._check(TokenTag.KW_BREAK):
@@ -204,6 +206,14 @@ class Parser:
             expr = self._parse_expr()
             self._expect_token(TokenTag.SEMICOLON)
             return ExprStmt(main_token, expr)
+
+    def _parse_while_loop_stmt(self):
+        main_token = self._next_token()
+        self._expect_token(TokenTag.LPAREN)
+        condition = self._parse_expr(0)
+        self._expect_token(TokenTag.RPAREN)
+        body = self._parse_stmt()
+        return WhileLoopStmt(main_token, condition, body)
 
     def _parse_loop_stmt(self):
         main_token = self._next_token()

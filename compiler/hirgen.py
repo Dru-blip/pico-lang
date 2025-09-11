@@ -3,8 +3,8 @@ from typing import Optional
 from function_id import FunctionIdGenerator
 from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag, HirLog, StoreLocal, BlockTag, \
     VarRef, Branch, LoopBlock, Continue, Break, Call, HirExternalLibBlock, ConstStr, ConstBool, StaticAccess, \
-    FieldValue, CreateStruct, FieldAccess, Cast
-from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Block, Return, NodeTag
+    FieldValue, CreateStruct, FieldAccess, Cast, UnOp
+from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Block, Return, NodeTag, OpTag
 from pico_error import PicoError
 from pico_types import TypeRegistry
 from symtab import Symbol, SymbolKind, Linkage
@@ -182,6 +182,8 @@ class HirGen:
             self._generate_if_stmt(node)
         elif node.tag == NodeTag.LoopStmt:
             self._generate_loop_stmt(node)
+        elif node.tag == NodeTag.WhileLoopStmt:
+            self._generate_while_loop(node)
         elif node.tag == NodeTag.Return:
             self._generate_return(node)
         elif node.tag == NodeTag.Log:
@@ -197,10 +199,66 @@ class HirGen:
         else:
             raise NotImplementedError(f"Statement {node.tag} not implemented")
 
+    def _generate_while_loop(self, node):
+        self._begin_scope()
+        loop_id = self._next_loop_id()
+
+        # desugar while loop into generic loop construct
+        """
+            while(cond){
+                loop_body            
+            }
+            
+            into 
+            
+            loop{
+                if(!cond)break;
+                loop_body
+            }
+        """
+        loop_block = LoopBlock(
+            BlockLabelGenerator.next("loop"),
+            loop_id,
+            node.token,
+            self.current_block,
+            self.scope_depth,
+        )
+        self.current_block.add_node(loop_block)
+        self.current_block = loop_block
+        self.loop_stack.append(loop_id)
+
+        # desugar start
+        # invert the condtion and create loop break block
+        condition_val = self._generate_expr(node.condition)
+        inverted_condition = UnOp(condition_val.token, OpTag.Not, condition_val)
+        break_block = HirBlock(
+            HirNodeTag.Block,
+            BlockLabelGenerator.next("while_break"),
+            node.token,
+            BlockTag.Local,
+            self.scope_depth,
+            self.current_block,
+        )
+        break_block.add_node(Break(node.token, loop_id))
+
+        # branch: if (!cond) break
+        self.current_block.add_node(
+            Branch(
+                node.token,
+                inverted_condition,
+                break_block,
+                None,
+                BlockLabelGenerator.next("while_merge"),
+            )
+        )
+        self._generate_stmt(node.body)
+        self.loop_stack.pop()
+        self._end_scope()
+        self.current_block = self.current_block.parent
+
     def _generate_loop_stmt(self, node):
         self._begin_scope()
-        loop_id = self.loop_counter
-        self.loop_counter += 1
+        loop_id = self._next_loop_id()
         loop_block = LoopBlock(BlockLabelGenerator.next("loop"), loop_id, node.token, self.current_block,
                                self.scope_depth)
         self.current_block.add_node(loop_block)
@@ -360,3 +418,8 @@ class HirGen:
         unique_name = f"{name}{self.var_id_counter}"
         self.var_id_counter += 1
         return unique_name
+
+    def _next_loop_id(self) -> int:
+        next_id = self.loop_counter
+        self.loop_counter += 1
+        return next_id

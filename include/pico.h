@@ -100,7 +100,6 @@ typedef struct pico_value {
 
 typedef struct pico_object {
     pbyte num_fields;
-    pbyte is_forwarded;
     pico_value fields[];
 } pico_object;
 

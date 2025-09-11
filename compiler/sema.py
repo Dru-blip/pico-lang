@@ -123,6 +123,8 @@ class Sema:
                     raise PicoError(f"undeclared identifier {node.name}", node.token)
                 node.symbol = sym
             return node.symbol.type
+        elif kind == HirNodeTag.UnOp:
+            return self._analyze_unop(node)
         elif kind == HirNodeTag.BinOp:
             return self._analyze_binop(node)
         elif kind == HirNodeTag.Call:
@@ -281,6 +283,19 @@ class Sema:
 
         node.type_id = result_type
         return node.type_id
+
+    def _analyze_unop(self, node):
+        if node.op_tag == OpTag.Not:
+            expr_type = self._analyze_expr(node.expr)
+            # check if expr type is boolean type or any type compatible with booleans(eg. int)
+            result_type = self.type_registry.get_cast_type(expr_type, TypeRegistry.BoolType)
+            if result_type == TypeRegistry.NoneType:
+                raise PicoError(f"cannot perform not on {self.type_registry.get_type(expr_type).kind}", node.token)
+            if expr_type != result_type:
+                node.expr = BoolCast(node.expr.token, node.expr)
+            return TypeRegistry.BoolType
+
+        return TypeRegistry.NoneType
 
     def _transform_type(self, type_node):
         if type_node.tag == NodeTag.NamedType:

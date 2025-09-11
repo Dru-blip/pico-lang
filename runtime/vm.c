@@ -161,6 +161,11 @@ frame_start:
             // TODO: implement long to int
             break;
         }
+        case OP_BNOT: {
+            const pico_value a = POP(vm);
+            PUSH(vm, a.boolean ? pico_false : pico_true);
+            break;
+        }
         case OP_LOG: {
             const pico_value a = POP(vm);
             printf("%d\n", a.i_value);
@@ -186,6 +191,7 @@ frame_start:
                 PICO_FRAME_NEW(function, frame->stack, frame);
             vm->frames[vm->fc++] = child_frame;
             frame = &vm->frames[vm->fc - 1];
+            env->frame = frame;
             for (pint i = function->param_count - 1; i >= 0; i--) {
                 frame->locals[i] = POP(vm);
             }
@@ -220,9 +226,11 @@ frame_start:
                 pico_frame *child_frame = frame;
                 frame = frame->parent;
                 --vm->fc;
+                env->frame = frame;
                 PICO_FRAME_DEINIT(*child_frame);
                 goto frame_start;
             }
+            env->frame = nullptr;
             goto frame_end;
         }
         case OP_ALLOCA_STRUCT: {

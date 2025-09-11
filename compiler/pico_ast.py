@@ -30,6 +30,8 @@ class OpTag:
     FieldAccess = "FieldAccess"
     Cast = "Cast"
 
+    Not = "Not"
+
 
 class NodeTag(str, Enum):
     NamedType = "NamedType"
@@ -52,6 +54,7 @@ class NodeTag(str, Enum):
 
     If = "If"
     LoopStmt = "LoopStmt"
+    WhileLoopStmt = "WhileLoopStmt"
 
     Break = "Break"
     Continue = "Continue"
@@ -151,6 +154,11 @@ class Stmt(Node):
 class LoopStmt(Stmt):
     def __init__(self, token, body):
         super().__init__(NodeTag.LoopStmt, token=token, body=body)
+
+
+class WhileLoopStmt(Stmt):
+    def __init__(self, token, condition, body):
+        super().__init__(NodeTag.WhileLoopStmt, token=token, condition=condition, body=body)
 
 
 class IfStmt(Node):
