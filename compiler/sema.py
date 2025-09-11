@@ -2,7 +2,7 @@
 from hir import Cast, HirNodeTag, BoolCast
 from pico_ast import OpTag
 from pico_error import PicoError
-from pico_types import TypeRegistry
+from pico_types import TypeRegistry, TypeKind
 from symtab import Symbol, SymbolKind
 
 
@@ -61,7 +61,6 @@ class Sema:
             self._analyze_stmt(node.else_block)
 
     def _analyze_storelocal(self, node):
-        # Resolve symbol if not already resolved
         if node.symbol is None:
             sym = self.current_block.resolve(node.name)
             if not sym:
@@ -130,6 +129,21 @@ class Sema:
             return self._analyze_storelocal(node)
         elif kind == HirNodeTag.CreateStruct:
             return self._analyze_create_struct(node)
+        elif kind == HirNodeTag.FieldAccess:
+            obj_type_id = self._analyze_expr(node.obj)
+            obj_type = self.type_registry.get_type(obj_type_id)
+            if obj_type.kind != TypeKind.Struct:
+                raise PicoError(f"invalid field access of {obj_type.kind}", node.token)
+            result = next(
+                ((i, sym) for i, sym in enumerate(obj_type.fields) if node.target.value == sym.name),
+                (None, None)
+            )
+            match_idx, match_sym = result
+            if not match_sym:
+                raise PicoError(f"invalid field access", node.target)
+            node.field_index = match_sym.field_index
+            node.type_id = match_sym.type
+            return match_sym.type
         else:
             raise Exception(f"implementation error: cannot analyze node: {node.kind} yet")
 
@@ -137,7 +151,6 @@ class Sema:
         if node.name.kind != HirNodeTag.VarRef:
             raise PicoError("Invalid struct literal", node.token)
 
-        # Resolve struct symbol if not already resolved
         if node.name.symbol is None:
             sym = self.current_block.resolve(node.name.name)
             if not sym:
@@ -170,7 +183,6 @@ class Sema:
             raise PicoError("Uncallable expression", node.token)
 
         if node.calle.kind == HirNodeTag.VarRef:
-            # Resolve callee symbol if not already resolved
             if node.calle.symbol is None:
                 sym = self.current_block.resolve(node.calle.name)
                 if not sym:
@@ -183,7 +195,6 @@ class Sema:
             params = function_symbol.params
             return_type = self.type_registry.get_ret_type(function_symbol.type)
         else:
-            # Handle StaticAccess - resolve qualifier and name symbols
             if node.calle.qualifier.symbol is None:
                 qual_sym = self.current_block.resolve(node.calle.qualifier.name)
                 if not qual_sym:

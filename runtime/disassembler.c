@@ -40,8 +40,10 @@ static const opcode_info opcode_table[] = {
     {OP_LSC, "LoadConstString", 2, print_constant_operand},
     {OP_LBT, "LoadBoolTrue", 0, NULL},
     {OP_LBF, "LoadBoolFalse", 0, NULL},
+    {OP_STORE, "Store", 2, print_operand_two},
     {OP_ISTORE, "IStore", 2, print_operand_two},
     {OP_ILOAD, "Iload", 2, print_operand_two},
+    {OP_LOAD, "Load", 2, print_operand_two},
 
     {OP_IADD, "IAdd", 0, NULL},
     {OP_ISUB, "ISub", 0, NULL},
@@ -78,6 +80,7 @@ static const opcode_info opcode_table[] = {
 
     {OP_ALLOCA_STRUCT, "AllocaStruct", 2, print_operand_two},
     {OP_SET_FIELD, "SetField", 2, print_operand_two},
+    {OP_LOAD_FIELD, "LoadField", 2, print_operand_two},
 
     {OP_LOG, "Log", 0, NULL},
 

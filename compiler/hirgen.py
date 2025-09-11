@@ -3,7 +3,7 @@ from typing import Optional
 from function_id import FunctionIdGenerator
 from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag, HirLog, StoreLocal, BlockTag, \
     VarRef, Branch, LoopBlock, Continue, Break, Call, HirExternalLibBlock, ConstStr, ConstBool, StaticAccess, \
-    FieldValue, CreateStruct
+    FieldValue, CreateStruct, FieldAccess
 from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Block, Return, NodeTag
 from pico_error import PicoError
 from pico_types import TypeRegistry
@@ -155,7 +155,6 @@ class HirGen:
         else:
             type_id = TypeRegistry.NoneType
 
-        # Only check for duplicate declarations in current scope
         existing = self.current_block.symbols.get(node.name)
         if existing and existing.scope_depth == self.scope_depth:
             raise PicoError(f"duplicate variable decl {node.name}", node.token)
@@ -170,7 +169,6 @@ class HirGen:
         self.current_block.add_symbol(symbol)
         value = self._generate_expr(node.init)
 
-        # Create StoreLocal without resolving the symbol reference (defaults to None)
         self.current_block.add_node(
             StoreLocal(node.name, node.token, None, value)
         )
@@ -299,8 +297,7 @@ class HirGen:
         elif node.tag == NodeTag.BoolLiteral:
             return ConstBool(node.value)
         elif node.tag == NodeTag.Identifier:
-            # Don't resolve symbol here - just store the name
-            return VarRef(node.token, node.name)  # Remove symbol parameter
+            return VarRef(node.token, node.name)
         elif node.tag == NodeTag.BinOp:
             lhs = self._generate_expr(node.lhs)
             rhs = self._generate_expr(node.rhs)
@@ -308,7 +305,7 @@ class HirGen:
         elif node.tag == NodeTag.Assignment:
             target = self._generate_expr(node.target)
             value = self._generate_expr(node.val)
-            return StoreLocal(target.name, node.token, None, value)  # symbol=None
+            return StoreLocal(target.name, node.token, None, value)
         elif node.tag == NodeTag.Call:
             callee = self._generate_expr(node.calle)
             args = []
@@ -319,6 +316,9 @@ class HirGen:
             qualifier = self._generate_expr(node.qualifier)
             name = self._generate_expr(node.name)
             return StaticAccess(node.token, qualifier, name)
+        elif node.tag == NodeTag.FieldAccess:
+            obj = self._generate_expr(node.obj)
+            return FieldAccess(node.token, obj, node.target)
         elif node.tag == NodeTag.StructLiteral:
             name = self._generate_expr(node.name)
             field_values = []

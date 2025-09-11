@@ -4,8 +4,10 @@
 #define OP_LSC 0x06
 #define OP_LBT 0x07
 #define OP_LBF 0x08
+#define OP_STORE 0x09
 #define OP_ISTORE 0x0A
 #define OP_ILOAD 0x0B
+#define OP_LOAD 0x0C
 
 #define OP_IADD 0x20
 #define OP_ISUB 0x21
@@ -41,5 +43,6 @@
 
 #define OP_ALLOCA_STRUCT 0x70
 #define OP_SET_FIELD 0x71
+#define OP_LOAD_FIELD 0x72
 
 #define OP_LOG 0x85

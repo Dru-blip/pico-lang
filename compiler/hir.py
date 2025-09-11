@@ -15,7 +15,7 @@ class HirNodeTag(Enum):
     StructDecl = "StructDecl"
     CreateStruct = "CreateStruct"
     FieldValue = "FieldValue"
-
+    FieldAccess = "FieldAccess"
     StaticAccess = "StaticAccess"
     Break = "Break"
     Continue = "Continue"
@@ -173,6 +173,12 @@ class BoolCast(HirNode):
 class StaticAccess(HirNode):
     def __init__(self, token, qualifier, name):
         super().__init__(HirNodeTag.StaticAccess, token=token, qualifier=qualifier, name=name)
+
+
+class FieldAccess(HirNode):
+    def __init__(self, token, obj, target):
+        super().__init__(HirNodeTag.FieldAccess, token=token, obj=obj, target=target)
+        self.field_index = -1  # set by sema
 
 
 class CreateStruct(HirNode):

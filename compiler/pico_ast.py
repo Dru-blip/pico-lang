@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Any, Optional, List
 
+
 class OpTag:
     Assign = "Assign"
     OR = "OR"
@@ -26,6 +27,7 @@ class OpTag:
     Call = "Call"
     StaticAccess = "StaticAccess"
     StructLiteral = "StructLiteral"
+    FieldAccess = "FieldAccess"
 
 
 class NodeTag(str, Enum):
@@ -44,6 +46,7 @@ class NodeTag(str, Enum):
     Call = "Call"
     StructLiteral = "StructLiteral"
     StaticAccess = "StaticAccess"
+    FieldAccess = "FieldAccess"
 
     If = "If"
     LoopStmt = "LoopStmt"
@@ -197,6 +200,11 @@ class FieldValue:
     def __init__(self, name, value):
         self.name = name
         self.value = value
+
+
+class FieldAccess(Expr):
+    def __init__(self, token, obj, target):
+        super().__init__(NodeTag.FieldAccess, token=token, obj=obj, target=target)
 
 
 class StaticAccess(Expr):

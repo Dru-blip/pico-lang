@@ -42,12 +42,12 @@ frame_start:
             PUSH(vm, READ_CONSTANT(vm))
             break;
         }
-        case OP_ISTORE: {
+        case OP_STORE: {
             puint index = READ_TWO_BYTES();
             frame->locals[index] = POP(vm);
             break;
         }
-        case OP_ILOAD: {
+        case OP_LOAD: {
             puint index = READ_TWO_BYTES();
             PUSH(vm, frame->locals[index]);
             break;
@@ -226,6 +226,12 @@ frame_start:
             pico_value value = POP(vm);
             pico_value *obj = PEEK(vm);
             PICO_OBJECT_SET_FIELD(obj->objref, field_index, value);
+            break;
+        }
+        case OP_LOAD_FIELD: {
+            puint field_index = READ_TWO_BYTES();
+            pico_value obj = POP(vm);
+            PUSH(vm, PICO_OBJ_FIELD(obj.objref, field_index));
             break;
         }
         }

@@ -8,8 +8,10 @@ OP_LIC = 0x05
 OP_LSC = 0x06
 OP_LBT = 0x07
 OP_LBF = 0x08
+OP_STORE = 0x09
 OP_ISTORE = 0x0A
 OP_ILOAD = 0x0B
+OP_LOAD = 0x0C
 
 # integer arithmetic
 OP_IADD = 0x20
@@ -50,6 +52,7 @@ OP_VOID_CALL_EXTERN = 0x6B
 # structs
 OP_ALLOCA_STRUCT = 0x70
 OP_SET_FIELD = 0x71
+OP_LOAD_FIELD = 0x72
 
 OP_LOG = 0x85
 
@@ -126,7 +129,7 @@ class IrModule:
         elif expr.kind == HirNodeTag.ConstBool:
             code.append(OP_LBT if expr.val == True else OP_LBF)
         elif expr.kind == HirNodeTag.VarRef:
-            code.append(OP_ILOAD)
+            code.append(OP_LOAD)
             code += expr.symbol.local_offset.to_bytes(2, "little")
         elif expr.kind == HirNodeTag.BoolCast:
             self.compile_expr(expr.expr, code)
@@ -157,6 +160,10 @@ class IrModule:
                 self.compile_expr(field.value, code)
                 code.append(OP_SET_FIELD)
                 code += field.field_index.to_bytes(2, "little")
+        elif expr.kind == HirNodeTag.FieldAccess:
+            self.compile_expr(expr.obj, code)
+            code.append(OP_LOAD_FIELD)
+            code += expr.field_index.to_bytes(2, "little")
         else:
             raise ValueError(f"Unsupported expression kind: {expr.kind}")
 
@@ -169,7 +176,7 @@ class IrModule:
 
             elif node.kind == HirNodeTag.StoreLocal:
                 self.compile_expr(node.value, code)
-                code.append(OP_ISTORE)
+                code.append(OP_STORE)
                 code += node.symbol.local_offset.to_bytes(2, "little")
 
             elif node.kind == HirNodeTag.Log:
