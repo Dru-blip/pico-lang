@@ -108,6 +108,9 @@ static pico_value pico_true = (pico_value){.kind = PICO_BOOL, .boolean = true};
 static pico_value pico_false =
     (pico_value){.kind = PICO_BOOL, .boolean = false};
 
+static pico_value pico_one = (pico_value){.kind = PICO_INT, .i_value = 1};
+static pico_value pico_zero = (pico_value){.kind = PICO_INT, .i_value = 0};
+
 typedef struct pico_function {
     puint name_id;
     pbyte *code;

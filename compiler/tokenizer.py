@@ -75,6 +75,7 @@ class TokenTag(str, Enum):
     KW_TRUE = "KW_TRUE",
     KW_FALSE = "KW_FALSE"
     KW_STRUCT = "KW_STRUCT"
+    KW_AS = "KW_AS"
 
 
 @dataclass
@@ -113,6 +114,7 @@ class Tokenizer:
         "true": TokenTag.KW_TRUE,
         "false": TokenTag.KW_FALSE,
         "struct": TokenTag.KW_STRUCT,
+        "as": TokenTag.KW_AS,
     }
 
     def __init__(self, source: str, filename: str):

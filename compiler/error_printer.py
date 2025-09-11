@@ -10,11 +10,11 @@ class ErrorPrinter:
         return source[line_start:offset]
 
     @staticmethod
-    def print_error(source: str, origin: Token, message: str):
+    def print_error(filename: str, source: str, origin: Token, message: str):
         source_line = ErrorPrinter.get_source_line(source, origin.line_start, origin.loc.start)
 
         print(f"Error: {message}")
-        print(f"--> test.fl:{origin.loc.line}:{origin.loc.col}")
+        print(f"-->{filename} :{origin.loc.line}:{origin.loc.col}")
         print("  |")
         print(f"{origin.loc.line} | {source_line}")
         print("  |", end="")

@@ -31,13 +31,13 @@ def main(filename: str):
             module = IrModule()
             module.build(block)
             binary = module.emit()
-
+            #
             # print("Global Constant Table:", module.const_table)
             # print("Binary:", list(binary))
             with open("out.pbc", "wb") as f:
                 f.write(binary)
         except PicoError as pe:
-            ErrorPrinter.print_error(source, pe.origin, pe.msg)
+            ErrorPrinter.print_error(filename, source, pe.origin, pe.msg)
 
 
 if __name__ == '__main__':

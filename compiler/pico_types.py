@@ -77,6 +77,15 @@ class TypeRegistry:
         [0, 0, 0, 0, 0, 5],
     ]
 
+    _cast_matrix = [
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 2, 3, 4, 0],
+        [0, 0, 2, 3, 4, 0],
+        [0, 0, 2, 3, 4, 0],
+        [0, 0, 0, 0, 0, 5],
+    ]
+
     def __init__(self):
         if TypeRegistry._instance:
             return
@@ -153,6 +162,10 @@ class TypeRegistry:
     @staticmethod
     def get_logical_type(lhs_id: int, rhs_id: int) -> int:
         return TypeRegistry._lookup_matrix(TypeRegistry._logical_matrix, lhs_id, rhs_id)
+
+    @staticmethod
+    def get_cast_type(lhs_id: int, rhs_id: int) -> int:
+        return TypeRegistry._lookup_matrix(TypeRegistry._cast_matrix, lhs_id, rhs_id)
 
     @staticmethod
     def get_assignment_type(expected_id: int, got_id: int) -> int:

@@ -28,6 +28,8 @@
 #define OP_IGT 0x30
 #define OP_IGE 0x31
 
+#define OP_B2I 0x59
+#define OP_B2L 0x5A
 #define OP_L2B 0x5B
 #define OP_L2I 0x5C
 #define OP_I2L 0x5D

@@ -3,7 +3,7 @@ from typing import Optional
 from function_id import FunctionIdGenerator
 from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag, HirLog, StoreLocal, BlockTag, \
     VarRef, Branch, LoopBlock, Continue, Break, Call, HirExternalLibBlock, ConstStr, ConstBool, StaticAccess, \
-    FieldValue, CreateStruct, FieldAccess
+    FieldValue, CreateStruct, FieldAccess, Cast
 from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Block, Return, NodeTag
 from pico_error import PicoError
 from pico_types import TypeRegistry
@@ -326,6 +326,11 @@ class HirGen:
                 field_value = self._generate_expr(field.value)
                 field_values.append(FieldValue(field.name, field_value))
             return CreateStruct(node.token, name, field_values)
+        elif node.tag == NodeTag.Cast:
+            expr = self._generate_expr(node.expr)
+            type_id = self._transform_type(node.target_type)
+            # from_type will be later set by sema after. for now leave it as NoneType
+            return Cast(node.token, expr, TypeRegistry.NoneType, type_id)
         else:
             raise NotImplementedError(f"Expression {node.tag} not implemented")
 

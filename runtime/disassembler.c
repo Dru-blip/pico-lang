@@ -65,6 +65,8 @@ static const opcode_info opcode_table[] = {
     {OP_IGT, "IGt", 0, nullptr},
     {OP_IGE, "IGe", 0, nullptr},
 
+    {OP_B2I, "BoolToInt", 0, nullptr},
+    {OP_B2L, "BoolToLong", 0, nullptr},
     {OP_L2B, "LongToBool", 0, nullptr},
     {OP_L2I, "LongToInt", 0, nullptr},
     {OP_I2L, "IntToLong", 0, nullptr},

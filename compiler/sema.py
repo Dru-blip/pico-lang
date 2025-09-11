@@ -146,6 +146,15 @@ class Sema:
             node.field_index = match_sym.field_index
             node.type_id = match_sym.type
             return match_sym.type
+        elif kind == HirNodeTag.Cast:
+            from_type = self._analyze_expr(node.expr)
+            node.from_type = from_type
+            result_type = self.type_registry.get_cast_type(from_type, node.to_type)
+            if result_type == TypeRegistry.NoneType:
+                raise PicoError(
+                    f"invalid type cast {self.type_registry.get_type(from_type).kind} to {self.type_registry.get_type(node.to_type).kind}",
+                    node.token)
+            return node.to_type
         else:
             raise Exception(f"implementation error: cannot analyze node: {node.kind} yet")
 

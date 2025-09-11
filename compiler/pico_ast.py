@@ -28,6 +28,7 @@ class OpTag:
     StaticAccess = "StaticAccess"
     StructLiteral = "StructLiteral"
     FieldAccess = "FieldAccess"
+    Cast = "Cast"
 
 
 class NodeTag(str, Enum):
@@ -47,6 +48,7 @@ class NodeTag(str, Enum):
     StructLiteral = "StructLiteral"
     StaticAccess = "StaticAccess"
     FieldAccess = "FieldAccess"
+    Cast = "Cast"
 
     If = "If"
     LoopStmt = "LoopStmt"
@@ -200,6 +202,11 @@ class FieldValue:
     def __init__(self, name, value):
         self.name = name
         self.value = value
+
+
+class Cast(Expr):
+    def __init__(self, token, expr, target_type):
+        super().__init__(NodeTag.Cast, token=token, expr=expr, target_type=target_type)
 
 
 class FieldAccess(Expr):

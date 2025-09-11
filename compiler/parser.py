@@ -10,7 +10,7 @@ from pico_ast import (
     Param,
     Program,
     Assignment, BinOp, Log, VarDecl, ExprStmt, IfStmt, LoopStmt, Continue, Break, Call, StrLiteral, ExternLibBlock,
-    BoolLiteral, StaticAccess, StructDecl, StructField, StructLiteral, FieldValue, FieldAccess,
+    BoolLiteral, StaticAccess, StructDecl, StructField, StructLiteral, FieldValue, FieldAccess, Cast,
 )
 from pico_error import PicoSyntaxError
 from tokenizer import Tokenizer, TokenTag
@@ -69,6 +69,8 @@ class Parser:
             TokenTag.LPAREN: Operator(OperatorKind.Postfix, 99, 100, OpTag.Call, Call),
             TokenTag.LBRACE: Operator(OperatorKind.Postfix, 99, 100, OpTag.StructLiteral, StructLiteral),
             TokenTag.DOT: Operator(OperatorKind.Postfix, 99, 100, OpTag.FieldAccess, FieldAccess),
+
+            TokenTag.KW_AS: Operator(OperatorKind.Postfix, 103, 105, OpTag.Cast, Cast),
         }
 
     @staticmethod
@@ -295,6 +297,10 @@ class Parser:
             self._advance()
             target = self._expect_token(TokenTag.ID)
             return FieldAccess(main_token, lhs, target)
+        if op_tag == OpTag.Cast:
+            self._advance()
+            target_type = self._parse_type_expr()
+            return Cast(main_token, lhs, target_type)
         return None
 
     def _parse_call_args(self):

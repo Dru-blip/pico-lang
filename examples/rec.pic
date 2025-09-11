@@ -1,21 +1,13 @@
 fn fib(int n) int{
-    let a=0;
-    let b=1;
-    log a;
-    log b;
-    loop{
-        if(b>n){
-            break;
-        }
-        let c=a+b;
-        a=b;
-        b=c;
-        log b;
+    if(n <= 1){
+        return 1;
     }
-    return b;
+    return fib(n - 1) + fib(n - 2);
 }
 
 fn main()void{
     let a=fib(5);
+    let c=false as int;
+    log a;
     return;
 }

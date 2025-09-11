@@ -35,6 +35,8 @@ OP_IGT = 0x30
 OP_IGE = 0x31
 
 # casting
+OP_B2I = 0x59
+OP_B2L = 0x5A
 OP_L2B = 0x5B
 OP_L2I = 0x5C
 OP_I2L = 0x5D
@@ -79,7 +81,7 @@ optag_to_opcode = {
 }
 
 bool_cast_table = {3: OP_I2B, 4: OP_L2B}
-cast_table = {(3, 4): OP_I2L, (4, 3): OP_L2I}
+cast_table = {(3, 4): OP_I2L, (4, 3): OP_L2I, (2, 3): OP_B2I}
 
 
 class FunctionIR:

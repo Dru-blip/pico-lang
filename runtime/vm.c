@@ -143,6 +143,16 @@ frame_start:
             // TODO: implement long to boolean
             break;
         }
+        case OP_B2L: {
+            const pico_value a = POP(vm);
+            PUSH(vm, a.boolean ? pico_one : pico_zero);
+            break;
+        }
+        case OP_B2I: {
+            const pico_value a = POP(vm);
+            PUSH(vm, a.boolean ? pico_one : pico_zero);
+            break;
+        }
         case OP_I2L: {
             // TODO: implement int to long
             break;
