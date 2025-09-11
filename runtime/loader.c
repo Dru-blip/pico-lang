@@ -6,7 +6,18 @@
 
 #define HEADER_SIZE 16
 
+static const bool check_file_ext(const char *filename, const char *ext) {
+    const char *dot = strrchr(filename, '.');
+    if (!dot || dot == filename)
+        return false;
+    return strcmp(dot + 1, ext) == 0;
+}
+
 bytecode_unit load_bytecode(const char *filename) {
+    if (!check_file_ext(filename, "pbc")) {
+        fprintf(stderr, "Error: Invalid file extension for '%s'\n", filename);
+        exit(EXIT_FAILURE);
+    }
     FILE *file = fopen(filename, "rb");
 
     if (!file) {

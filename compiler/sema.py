@@ -1,6 +1,6 @@
 # semantic analyzer
 from hir import Cast, HirNodeTag, BoolCast
-from pico_ast import OpTag
+from pico_ast import OpTag, NodeTag, NamedType
 from pico_error import PicoError
 from pico_types import TypeRegistry, TypeKind
 from symtab import Symbol, SymbolKind
@@ -87,7 +87,7 @@ class Sema:
 
     def _analyze_return(self, node):
         tr = self.type_registry
-        ret_type = tr.get_ret_type(self.function_block.function_id)
+        ret_type = tr.get_ret_type(self.function_block.type_id)
 
         if node.expr:
             val_type = self._analyze_expr(node.expr)
@@ -117,6 +117,8 @@ class Sema:
         elif kind == HirNodeTag.VarRef:
             if node.symbol is None:
                 sym = self.current_block.resolve(node.name)
+                if isinstance(sym.type, NamedType):
+                    sym.type = self._transform_type(sym.type)
                 if not sym:
                     raise PicoError(f"undeclared identifier {node.name}", node.token)
                 node.symbol = sym
@@ -270,3 +272,25 @@ class Sema:
 
         node.type_id = result_type
         return node.type_id
+
+    def _transform_type(self, type_node):
+        if type_node.tag == NodeTag.NamedType:
+            if type_node.name == "void":
+                return TypeRegistry.VoidType
+            elif type_node.name == "int":
+                return TypeRegistry.IntType
+            elif type_node.name == "long":
+                return TypeRegistry.LongType
+            elif type_node.name == "str":
+                return TypeRegistry.StrType
+            elif type_node.name == "bool":
+                return TypeRegistry.BoolType
+            else:
+                type_symbol = self.block.resolve(type_node.name)
+                if not type_symbol:
+                    raise PicoError(f"Unknown type {type_node.name}", type_node.token)
+                if type_symbol.kind != SymbolKind.Struct:
+                    raise PicoError(f"Unknown type {type_node.name}", type_node.token)
+                return type_symbol.type
+
+        raise PicoError(f"Unknown type {type_node.name}", type_node.token)

@@ -267,7 +267,7 @@ class Tokenizer:
                 if self._check("="):
                     self._advance()
                     tok.tag = TokenTag.LESS_EQUAL
-                if self._check("<"):
+                elif self._check("<"):
                     self._advance()
                     tok.tag = TokenTag.LESS_LESS
                 else:
@@ -277,7 +277,7 @@ class Tokenizer:
                 if self._check("="):
                     self._advance()
                     tok.tag = TokenTag.GREATER_EQUAL
-                if self._check(">"):
+                elif self._check(">"):
                     self._advance()
                     tok.tag = TokenTag.GREATER_GREATER
                 else:

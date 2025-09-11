@@ -22,7 +22,7 @@ void pico_env_deinit(pico_env *env) {
     free(env->vm);
 }
 
-const bool check_file_ext(const char *filename, const char *ext) {
+static const bool check_file_ext(const char *filename, const char *ext) {
     const char *dot = strrchr(filename, '.');
     if (!dot || dot == filename)
         return false;

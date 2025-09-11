@@ -13,7 +13,7 @@ Pico is a **statically typed programming language** that compiles down to byteco
 - **Native function support**: Extend the language by writing libraries in C.
 - **Garbage collected runtime**: Semi-space collector automatically manages memory.
 
-#### Example
+## Example
 
 Here's a simple example that creates a window using Raylib:
 
@@ -65,8 +65,6 @@ extern @prefix="raylib"{
 
 Currently, Pico provides prebuilt binaries for **Linux x86-64 only**. Support for other platforms has been planned. You can get Pico either by **downloading prebuilt binaries** or by **compiling from source**.
 
----
-
 ### Option 1: Download Prebuilt Binaries (Linux x86-64)
 
 The easiest way is to use the **precompiled Pico VM and example programs**.
@@ -74,28 +72,28 @@ The easiest way is to use the **precompiled Pico VM and example programs**.
 **Download binaries:**
 [pico_x86-64_linux.zip](https://github.com/Dru-blip/pico-lang/releases)
 
-extract the zip file.
+Extract the zip file.
 
-**contents of zip file**:
+**Contents of zip file:**
 
-- picoc (executable for compiler)
-- pico (executable containing runtime)
-- libraylib.so (library containing raylib functions)
-- libpio.so (library containing io functions)
+- `picoc` (executable for compiler)
+- `pico` (executable containing runtime)
+- `libraylib.so` (library containing raylib functions)
+- `libpio.so` (library containing io functions)
 
-place the .so files in a directory of your choice.
-see **Usage** section to compile and run programs.
+Place the `.so` files in a directory of your choice.
+See **Usage** section to compile and run programs.
 
 ### Option 2: Compile from Source
 
 If you want to compile Pico from source, you can follow these steps:
 
-make sure you have the following prerequisites installed:
+Make sure you have the following prerequisites installed:
 
 - make
-- gcc/clang versions which can compiler c23 standard
-- Python 3.12.3 (version im using to build pico compiler)
-- raylib (to run the example pico) can download prebuild native library from releases page or see [raylib documentation](https://www.raylib.com/)
+- gcc/clang versions which can compile c23 standard
+- Python 3.12.3 (version I'm using to build pico compiler)
+- raylib (to run the example pico) can download prebuilt native library from releases page or see [raylib documentation](https://www.raylib.com/)
 
 1. Clone the Pico repository:
 
@@ -110,30 +108,101 @@ make sure you have the following prerequisites installed:
    ```
 
 3. Build the project using Make:
+
    ```bash
    python3 -m venv venv
    source venv/bin/activate
    pip install pyinstaller typer
    make
    ```
-   make will create two directories: `out` and `dist`. The `out` directory contains the pico runtime(`pico`), while the `dist` directory contains the pico compiler (`picoc`).
 
-### Usage
+   Make will create two directories: `out` and `dist`. The `out` directory contains the pico runtime (`pico`), while the `dist` directory contains the pico compiler (`picoc`).
+
+## Usage
 
 **Compile a Pico source file (`.pic`) into bytecode (`.pbc`):**
-by default compiler will emit out.pbc file in current directory
+
+By default, the compiler will emit an `out.pbc` file in the current directory.
 
 ```bash
-#current implementation only support single file compilation
+# Current implementation only supports single file compilation
 ./picoc <filename>.pico
-
 ```
 
-for running a pico bytecode file
+For running a pico bytecode file:
 
-```cmd
-  pico  <*.pbc> <path to libs>
+```bash
+pico <*.pbc> <path to libs>
 
- # example
-  pico out.pbc ./lib
+# Example
+pico out.pbc ./lib
 ```
+
+## Language Syntax and Features
+
+This section documents the currently implemented syntax and features of Pico.
+It is a work-in-progress and grows as new features are added to the compiler and VM.
+
+### 1. Program Structure
+
+A Pico program consists of:
+
+- Struct definitions
+- Function definitions
+- Extern library declarations
+
+### 2. Types
+
+Primitive Types:
+
+- `bool`
+- `int`
+- `str`
+- `void`
+
+Struct Types:
+
+these are user defined types , declared with `struct` keyword
+
+```
+struct Color {
+    int r;
+    int g;
+    int b;
+    int a;
+}
+```
+
+instances can be created with field initializers
+
+```
+let c = Color{ .r=255, .g=161, .b=0, .a=255 };
+```
+
+struct instances by default are heap allocated and garbage collected user does not have to worry about memory management.
+every field has to be initialized, compiler will not throw any error if not initialized,
+==access them at runtime can cause UB(undefined behavior) or could crash the program.==
+
+### 3.Variables
+
+declared using `let` keyword
+
+```
+let x:int = 10;
+let message = "Hello"; (type inference)
+```
+
+Must be initialized at declaration.
+if type specifier is missing, compiler will automatically infer the type from the initializer during semantic analysis.
+
+### 4.Functions
+
+declared using `fn` keyword
+
+```
+fn add(int a, int b) int {
+    return a + b;
+}
+```
+
+parameter types and return type specifiers are mandatory.

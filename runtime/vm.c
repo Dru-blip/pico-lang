@@ -158,7 +158,7 @@ frame_start:
         }
         case OP_JF: {
             const pico_value a = POP(vm);
-            if (!a.i_value) {
+            if (!a.boolean) {
                 puint offset = READ_TWO_BYTES();
                 frame->ip = offset;
             }
@@ -173,9 +173,9 @@ frame_start:
             puint function_index = READ_TWO_BYTES();
             pico_function *function = &vm->functions[function_index];
             pico_frame child_frame =
-                PICO_FRAME_NEW(function, &vm->stack[vm->sp], frame);
+                PICO_FRAME_NEW(function, frame->stack, frame);
             vm->frames[vm->fc++] = child_frame;
-            frame = &child_frame;
+            frame = &vm->frames[vm->fc - 1];
             for (pint i = function->param_count - 1; i >= 0; i--) {
                 frame->locals[i] = POP(vm);
             }

@@ -174,11 +174,9 @@ class Parser:
             var_type = self._parse_type_expr()
         else:
             var_type = None
-        init = None
-        if self._check(TokenTag.EQUAL):
-            self._advance()
-            init = self._parse_expr(0)
 
+        self._expect_token(TokenTag.EQUAL)
+        init = self._parse_expr(0)
         self._expect_token(TokenTag.SEMICOLON)
         return VarDecl(main_token, ident_token.value, var_type, init)
 

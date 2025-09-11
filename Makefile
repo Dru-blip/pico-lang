@@ -6,7 +6,7 @@ OUTDIR  := out
 PICO_BIN := $(OUTDIR)/pico
 PICO_SRCS := $(wildcard runtime/*.c)
 
-all: $(PICO_BIN) compiler
+all: $(PICO_BIN)
 
 $(PICO_BIN): outdir
 	$(CC) $(CFLAGS) -o $@ $(PICO_SRCS) -ldl
