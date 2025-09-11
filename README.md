@@ -63,7 +63,7 @@ extern @prefix="raylib"{
 
 ## Getting Pico
 
-Currently, Pico provides prebuilt binaries for **Linux x86-64 only**. Support for other platforms has been planned. You can get Pico either by **downloading prebuilt binaries** or by **compiling from source**.
+Currently, Pico provides prebuilt binaries for **Linux x86-64 only**. Support for other platforms has been planned. You can get Pico linux either by **downloading prebuilt binaries** or by **compiling from source**.
 
 ---
 
