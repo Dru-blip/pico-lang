@@ -11,7 +11,7 @@ from pico_ast import (
     Program,
     Assignment, BinOp, Log, VarDecl, ExprStmt, IfStmt, LoopStmt, Continue, Break, Call, StrLiteral, ExternLibBlock,
     BoolLiteral, StaticAccess, StructDecl, StructField, StructLiteral, FieldValue, FieldAccess, Cast, WhileLoopStmt,
-    UnOp,
+    UnOp, CompoundAssignment,
 )
 from pico_error import PicoSyntaxError
 from tokenizer import Tokenizer, TokenTag
@@ -42,6 +42,12 @@ class Parser:
 
         self.operator_table = {
             TokenTag.EQUAL: Operator(OperatorKind.Assign, 1, 1, OpTag.Assign, Assignment),
+            TokenTag.PLUS_EQUAL: Operator(OperatorKind.Assign, 1, 1, OpTag.ADD, CompoundAssignment),
+            TokenTag.MINUS_EQUAL: Operator(OperatorKind.Assign, 1, 1, OpTag.SUB, CompoundAssignment),
+            TokenTag.ASTERISK_EQUAL: Operator(OperatorKind.Assign, 1, 1, OpTag.MUL, CompoundAssignment),
+            TokenTag.SLASH_EQUAL: Operator(OperatorKind.Assign, 1, 1, OpTag.DIV, CompoundAssignment),
+            TokenTag.MODULUS_EQUAL: Operator(OperatorKind.Assign, 1, 1, OpTag.MOD, CompoundAssignment),
+
             TokenTag.PIPE_PIPE: Operator(OperatorKind.Infix, 28, 29, OpTag.OR, BinOp),
             TokenTag.AMPERSAND_AMPERSAND: Operator(OperatorKind.Infix, 30, 31, OpTag.AND, BinOp),
 

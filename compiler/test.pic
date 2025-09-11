@@ -1,12 +1,12 @@
-struct Color{
-    int r;
-    int g;
-    int b;
-    int a;
+struct Counter{
+    int count;
 }
 
 fn main()void{
-    let a=0;
-    log a++;
+    let a=Counter{.count=1};
+    while(a.count<20){
+        a.count*=2;
+    }
+    log a;
     return;
 }

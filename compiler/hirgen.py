@@ -367,6 +367,10 @@ class HirGen:
             target = self._generate_expr(node.target)
             value = self._generate_expr(node.val)
             return StoreLocal(target.name, node.token, None, value)
+        elif node.tag == NodeTag.CompoundAssignment:
+            target = self._generate_expr(node.target)
+            value = self._generate_expr(node.val)
+            return StoreLocal(target.name, node.token, None, BinOp(node.val.token, node.op_tag, target, value))
         elif node.tag == NodeTag.Call:
             callee = self._generate_expr(node.calle)
             args = []

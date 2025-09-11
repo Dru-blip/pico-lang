@@ -51,6 +51,7 @@ class NodeTag(str, Enum):
     Not = "Not"
 
     Assignment = "Assignment"
+    CompoundAssignment = "CompoundAssignment"
     Call = "Call"
     StructLiteral = "StructLiteral"
     StaticAccess = "StaticAccess"
@@ -240,6 +241,11 @@ class Call(Expr):
 class Assignment(Expr):
     def __init__(self, token, op_tag, target, val):
         super().__init__(NodeTag.Assignment, op_tag=op_tag, token=token, target=target, val=val)
+
+
+class CompoundAssignment(Expr):
+    def __init__(self, token, op_tag, target, val):
+        super().__init__(NodeTag.CompoundAssignment, op_tag=op_tag, token=token, target=target, val=val)
 
 
 class IntLiteral(Expr):
