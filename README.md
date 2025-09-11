@@ -93,7 +93,7 @@ If you want to compile Pico from source, you can follow these steps:
 make sure you have the following prerequisites installed:
 
 - make
-- gcc/clang versions which can compiler c23 standard
+- gcc/clang versions which can compile c23 standard
 - Python 3.12.3 (version im using to build pico compiler)
 - raylib (to run the example pico) can download prebuild native library from releases page or see [raylib documentation](https://www.raylib.com/)
 
