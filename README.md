@@ -65,6 +65,8 @@ extern @prefix="raylib"{
 
 Currently, Pico provides prebuilt binaries for **Linux x86-64 only**. Support for other platforms has been planned. You can get Pico either by **downloading prebuilt binaries** or by **compiling from source**.
 
+---
+
 ### Option 1: Download Prebuilt Binaries (Linux x86-64)
 
 The easiest way is to use the **precompiled Pico VM and example programs**.
@@ -91,9 +93,9 @@ If you want to compile Pico from source, you can follow these steps:
 Make sure you have the following prerequisites installed:
 
 - make
-- gcc/clang versions which can compile c23 standard
-- Python 3.12.3 (version I'm using to build pico compiler)
-- raylib (to run the example pico) can download prebuilt native library from releases page or see [raylib documentation](https://www.raylib.com/)
+- gcc/clang versions which can compiler c23 standard
+- Python 3.12.3 (version im using to build pico compiler)
+- raylib (to run the example pico) can download prebuild native library from releases page or see [raylib documentation](https://www.raylib.com/)
 
 1. Clone the Pico repository:
 
