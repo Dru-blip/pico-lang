@@ -1,4 +1,5 @@
 # semantic analyzer
+
 from hir import Cast, HirNodeTag, BoolCast
 from pico_ast import OpTag, NodeTag, NamedType
 from pico_error import PicoError
@@ -148,6 +149,35 @@ class Sema:
             node.field_index = match_sym.field_index
             node.type_id = match_sym.type
             return match_sym.type
+        elif kind == HirNodeTag.StoreField:
+            obj_type_id = self._analyze_expr(node.obj)
+            obj_type = self.type_registry.get_type(obj_type_id)
+
+            if obj_type.kind != TypeKind.Struct:
+                raise PicoError(f"cannot assign field on non-struct type {obj_type.kind}", node.token)
+
+            result = next(
+                ((i, sym) for i, sym in enumerate(obj_type.fields) if node.field_name.value == sym.name),
+                (None, None)
+            )
+            match_idx, match_sym = result
+            if not match_sym:
+                raise PicoError(f"no such field '{node.field_name.value}' in struct", node.token)
+
+            node.field_index = match_idx
+            node.symbol = match_sym
+
+            value_type_id = self._analyze_expr(node.value)
+            if value_type_id != match_sym.type:
+                raise PicoError(
+                    f"type mismatch in assignment to field '{node.field_name.value}': "
+                    f"expected {self.type_registry.get_type(match_sym.type)}, "
+                    f"got {self.type_registry.get_type(value_type_id)}",
+                    node.token,
+                )
+
+            node.type_id = node.symbol.type
+            return node.type_id
         elif kind == HirNodeTag.Cast:
             from_type = self._analyze_expr(node.expr)
             node.from_type = from_type

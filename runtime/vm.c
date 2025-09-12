@@ -256,6 +256,12 @@ frame_start:
             PICO_OBJECT_SET_FIELD(obj->objref, field_index, value);
             break;
         }
+        case OP_STORE_FIELD: {
+            puint field_index = READ_TWO_BYTES();
+            pico_value obj = POP(vm);
+            PICO_OBJECT_SET_FIELD(obj.objref, field_index, *PEEK(vm));
+            break;
+        }
         case OP_LOAD_FIELD: {
             puint field_index = READ_TWO_BYTES();
             pico_value obj = POP(vm);

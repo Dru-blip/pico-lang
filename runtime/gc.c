@@ -35,9 +35,9 @@ pico_gc *pico_gc_new(size_t heap_size) {
 
 static void gc_semi_space_destroy(gc_semi_space *space) {
     free(space->space_start);
-    space->space_start = NULL;
-    space->space_end = NULL;
-    space->alloc_ptr = NULL;
+    space->space_start = nullptr;
+    space->space_end = nullptr;
+    space->alloc_ptr = nullptr;
     space->size = 0;
 }
 

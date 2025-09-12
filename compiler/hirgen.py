@@ -3,7 +3,7 @@ from typing import Optional
 from function_id import FunctionIdGenerator
 from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag, HirLog, StoreLocal, BlockTag, \
     VarRef, Branch, LoopBlock, Continue, Break, Call, HirExternalLibBlock, ConstStr, ConstBool, StaticAccess, \
-    FieldValue, CreateStruct, FieldAccess, Cast, UnOp
+    FieldValue, CreateStruct, FieldAccess, Cast, UnOp, StoreField
 from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Block, Return, NodeTag, OpTag
 from pico_error import PicoError
 from pico_types import TypeRegistry
@@ -366,11 +366,31 @@ class HirGen:
         elif node.tag == NodeTag.Assignment:
             target = self._generate_expr(node.target)
             value = self._generate_expr(node.val)
-            return StoreLocal(target.name, node.token, None, value)
+            if target.kind == HirNodeTag.VarRef:
+                return StoreLocal(target.name, node.token, None, value)
+            if target.kind == HirNodeTag.FieldAccess:
+                return StoreField(node.token, target.obj, target.target, value)
+            raise PicoError("invalid assignment target", node.token)
         elif node.tag == NodeTag.CompoundAssignment:
             target = self._generate_expr(node.target)
             value = self._generate_expr(node.val)
-            return StoreLocal(target.name, node.token, None, BinOp(node.val.token, node.op_tag, target, value))
+
+            if isinstance(target, VarRef):
+                return StoreLocal(
+                    target.name,
+                    node.token,
+                    None,
+                    BinOp(node.val.token, node.op_tag, target, value)
+                )
+            elif isinstance(target, FieldAccess):
+                return StoreField(
+                    node.token,
+                    target.obj,
+                    target.target,
+                    BinOp(node.val.token, node.op_tag, target, value)
+                )
+            else:
+                raise PicoError("Invalid assignment target", node.token)
         elif node.tag == NodeTag.Call:
             callee = self._generate_expr(node.calle)
             args = []

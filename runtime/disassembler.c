@@ -88,6 +88,7 @@ static const opcode_info opcode_table[] = {
     {OP_LOAD_FIELD, "LoadField", 2, print_operand_two},
     {OP_IFIELD_INC, "IFieldInc", 2, print_operand_two},
     {OP_IFIELD_DEC, "IFieldDec", 2, print_operand_two},
+    {OP_STORE_FIELD, "StoreField", 2, print_operand_two},
 
     {OP_LOG, "Log", 0, nullptr},
 

@@ -60,6 +60,7 @@ OP_SET_FIELD = 0x71
 OP_LOAD_FIELD = 0x72
 OP_IFIELD_INC = 0x73
 OP_IFIELD_DEC = 0x74
+OP_STORE_FIELD = 0x75
 
 OP_LOG = 0x85
 
@@ -173,7 +174,6 @@ class IrModule:
                         code += offset
                         code.append(OP_LOAD)
                         code += offset
-
                 else:
                     index = expr.expr.field_index.to_bytes(2, "little")
                     if expr.op_tag in (OpTag.PostIncrement, OpTag.PostDecrement):
@@ -189,7 +189,11 @@ class IrModule:
             else:
                 self.compile_expr(expr.expr, code)
                 code.append(optag_to_opcode[expr.op_tag])
-
+        elif expr.kind == HirNodeTag.StoreField:
+            self.compile_expr(expr.value, code)
+            self.compile_expr(expr.obj, code)
+            code.append(OP_STORE_FIELD)
+            code += expr.field_index.to_bytes(2, "little")
         elif expr.kind == HirNodeTag.Call:
             is_void_call = expr.type_id == TypeRegistry.VoidType
             for arg in expr.args:

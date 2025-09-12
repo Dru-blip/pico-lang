@@ -53,5 +53,7 @@
 
 #define OP_IFIELD_INC 0x73
 #define OP_IFIELD_DEC 0x74
+#define OP_STORE_FIELD 0x75
+
 
 #define OP_LOG 0x85

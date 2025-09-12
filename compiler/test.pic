@@ -5,8 +5,9 @@ struct Counter{
 fn main()void{
     let a=Counter{.count=1};
     while(a.count<20){
-        a.count*=2;
+        a.count+=2;
     }
     log a;
     return;
 }
+

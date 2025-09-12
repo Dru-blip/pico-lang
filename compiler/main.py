@@ -1,3 +1,5 @@
+import typer
+
 from error_printer import ErrorPrinter
 from hirgen import HirGen
 from ir import IrModule
@@ -6,8 +8,6 @@ from pico_error import PicoError
 from sema import Sema
 
 
-# TODO: field assignments(simple and compound assignments).
-# TODO: Compound assignments.
 # TODO: Ternary expressions
 # TODO: for loops.
 # TODO: else if and switch statements.
@@ -37,5 +37,5 @@ def main(filename: str):
 
 
 if __name__ == '__main__':
-    main("test.pic")
-    # typer.run(main)
+    # main("test.pic")
+    typer.run(main)

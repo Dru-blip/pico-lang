@@ -17,6 +17,7 @@ class HirNodeTag(Enum):
     FieldValue = "FieldValue"
     FieldAccess = "FieldAccess"
     StaticAccess = "StaticAccess"
+    StoreField = "StoreField"
     Break = "Break"
     Continue = "Continue"
     Return = "Return"
@@ -192,6 +193,17 @@ class FieldValue(HirNode):
     def __init__(self, name, value):
         super().__init__(HirNodeTag.FieldValue, token=name, name=name, value=value)
         self.field_index = -1  # set by sema
+
+
+class StoreField(HirNode):
+    def __init__(self, token, obj, field_name, value):
+        super().__init__(HirNodeTag.StoreField,
+                         token=token,
+                         obj=obj,
+                         field_name=field_name,
+                         value=value)
+        self.field_index = -1  # resolved during sema
+        self.symbol = None  # field symbol
 
 
 class Call(HirNode):
