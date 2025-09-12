@@ -3,7 +3,7 @@ from typing import Optional
 from function_id import FunctionIdGenerator
 from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag, HirLog, StoreLocal, BlockTag, \
     VarRef, Branch, LoopBlock, Continue, Break, Call, HirExternalLibBlock, ConstStr, ConstBool, StaticAccess, \
-    FieldValue, CreateStruct, FieldAccess, Cast, UnOp, StoreField
+    FieldValue, CreateStruct, FieldAccess, Cast, UnOp, StoreField, MultiBranch
 from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Block, Return, NodeTag, OpTag
 from pico_error import PicoError
 from pico_types import TypeRegistry
@@ -357,30 +357,81 @@ class HirGen:
         self.current_block.add_node(Break(node.token, self.loop_stack[-1]))
 
     def _generate_if_stmt(self, node):
-        condition = self._generate_expr(node.condition)
+        if len(node.elsif_stmts):
+            self._convert_if_to_multibranch(node)
+        else:
+            condition = self._generate_expr(node.condition)
 
-        # then block
-        self._begin_scope()
-        then_block = HirBlock(
-            HirNodeTag.Block,
-            BlockLabelGenerator.next("then"),
-            node.token,
-            BlockTag.Local,
-            self.scope_depth,
-            self.current_block,
-        )
-        self.current_block = then_block
-        self._generate_stmt(node.then_stmt)
-        self._end_scope()
-        self.current_block = self.current_block.parent
+            # then block
+            self._begin_scope()
+            then_block = HirBlock(
+                HirNodeTag.Block,
+                BlockLabelGenerator.next("then"),
+                node.token,
+                BlockTag.Local,
+                self.scope_depth,
+                self.current_block,
+            )
+            self.current_block = then_block
+            self._generate_stmt(node.then_stmt)
+            self._end_scope()
+            self.current_block = self.current_block.parent
 
-        # else block (optional)
+            # else block (optional)
+            else_block = None
+            if node.else_stmt:
+                self._begin_scope()
+                else_block = HirBlock(
+                    HirNodeTag.Block,
+                    BlockLabelGenerator.next("else"),
+                    node.token,
+                    BlockTag.Local,
+                    self.scope_depth,
+                    self.current_block,
+                )
+                self.current_block = else_block
+                self._generate_stmt(node.else_stmt)
+                self._end_scope()
+                self.current_block = self.current_block.parent
+
+            # branch node
+            self.current_block.add_node(
+                Branch(
+                    node.token,
+                    condition,
+                    then_block,
+                    else_block,
+                    BlockLabelGenerator.next("merge"),
+                )
+            )
+
+    def _convert_if_to_multibranch(self, node):
+        if_stmts = [node, *node.elsif_stmts]
+        branches = []
+
+        for stmt in if_stmts:
+            branch_condition = self._generate_expr(stmt.condition)
+            self._begin_scope()
+            branch_block = HirBlock(
+                HirNodeTag.Block,
+                BlockLabelGenerator.temp(),
+                stmt.token,
+                BlockTag.Local,
+                self.scope_depth,
+                self.current_block,
+            )
+            self.current_block = branch_block
+            self._generate_stmt(stmt.then_stmt)
+            branches.append((branch_condition, branch_block))
+            self._end_scope()
+            self.current_block = self.current_block.parent
+
         else_block = None
         if node.else_stmt:
             self._begin_scope()
             else_block = HirBlock(
                 HirNodeTag.Block,
-                BlockLabelGenerator.next("else"),
+                BlockLabelGenerator.next("else_branch"),
                 node.token,
                 BlockTag.Local,
                 self.scope_depth,
@@ -390,17 +441,7 @@ class HirGen:
             self._generate_stmt(node.else_stmt)
             self._end_scope()
             self.current_block = self.current_block.parent
-
-        # branch node
-        self.current_block.add_node(
-            Branch(
-                node.token,
-                condition,
-                then_block,
-                else_block,
-                BlockLabelGenerator.next("merge"),
-            )
-        )
+        self.current_block.add_node(MultiBranch(node.token, branches, else_block))
 
     def _generate_block(self, node: Block):
         self._begin_scope()
@@ -426,9 +467,9 @@ class HirGen:
 
     def _generate_expr(self, node):
         if node.tag == NodeTag.IntLiteral:
-            return ConstInt(node.value)
+            return ConstInt(node.token,node.value)
         elif node.tag == NodeTag.StrLiteral:
-            return ConstStr(node.value)
+            return ConstStr(node.token,node.value)
         elif node.tag == NodeTag.BoolLiteral:
             return ConstBool(node.value)
         elif node.tag == NodeTag.Identifier:

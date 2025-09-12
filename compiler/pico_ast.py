@@ -1,3 +1,4 @@
+from ctypes.wintypes import tagPOINT
 from enum import Enum
 from typing import Any, Optional, List
 
@@ -174,8 +175,9 @@ class ForLoopStmt(Stmt):
 
 
 class IfStmt(Node):
-    def __init__(self, token, condition, then_stmt, else_stmt=None):
-        super().__init__(NodeTag.If, token=token, condition=condition, then_stmt=then_stmt, else_stmt=else_stmt)
+    def __init__(self, token, condition, then_stmt, elsif_stmts=[], else_stmt=None):
+        super().__init__(NodeTag.If, token=token, condition=condition, then_stmt=then_stmt, elsif_stmts=elsif_stmts,
+                         else_stmt=else_stmt)
 
 
 class Log(Stmt):
@@ -255,13 +257,13 @@ class CompoundAssignment(Expr):
 
 
 class IntLiteral(Expr):
-    def __init__(self, value: int):
-        super().__init__(NodeTag.IntLiteral, value=value)
+    def __init__(self, value: int, token):
+        super().__init__(NodeTag.IntLiteral, value=value, token=token)
 
 
 class StrLiteral(Expr):
-    def __init__(self, value: str):
-        super().__init__(NodeTag.StrLiteral, value=value)
+    def __init__(self, value: str, token):
+        super().__init__(NodeTag.StrLiteral, value=value, token=token)
 
 
 class BoolLiteral(Expr):

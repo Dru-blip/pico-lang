@@ -263,13 +263,29 @@ class IrModule:
                     code[merge_patch:merge_patch + 2] = len(code).to_bytes(2, "little")
                 else:
                     code[jmp_patch:jmp_patch + 2] = len(code).to_bytes(2, "little")
+            elif node.kind == HirNodeTag.MultiBranch:
+                merge_patches = []
+                for (condition, branch) in node.branches:
+                    self.compile_expr(condition, code)
+                    code.append(OP_JF)
+                    cond_path_index = len(code)
+                    code += b"\x00\x00"
+                    self.generate_bytecode_from_block(branch, code)
+                    code.append(OP_JMP)
+                    merge_patches.append(len(code))
+                    code += b"\x00\x00"
+                    code[cond_path_index:cond_path_index + 2] = len(code).to_bytes(2, "little")
+
+                if node.else_block:
+                    self.generate_bytecode_from_block(node.else_block, code)
+
+                for patch_idx in merge_patches:
+                    code[patch_idx:patch_idx + 2] = len(code).to_bytes(2, "little")
 
             elif node.kind == HirNodeTag.LoopBlock:
                 self.loop_start_indices.append(len(code))
                 self.loop_break_patches.append([])
-
                 self.generate_bytecode_from_block(node, code)
-
                 code.append(OP_JMP)
                 code += self.loop_start_indices[-1].to_bytes(2, "little")
 

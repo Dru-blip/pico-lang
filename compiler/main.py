@@ -8,7 +8,7 @@ from pico_error import PicoError
 from sema import Sema
 
 
-# TODO: else if and switch statements.
+# TODO: switch statements.
 # TODO: Ternary expressions
 # TODO: emit type descriptors in bytecode.
 # TODO: introduce nil type.

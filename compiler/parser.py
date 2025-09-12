@@ -110,6 +110,9 @@ class Parser:
     def _check(self, tag):
         return self.current_token.tag == tag
 
+    def _check_next(self, tag):
+        return self.tokens[self.pos + 1].tag == tag if self.pos + 1 < len(self.tokens) else False
+
     def parse_nodes(self):
         nodes = []
         while self.current_token.tag != TokenTag.EOF:
@@ -257,10 +260,20 @@ class Parser:
         self._expect_token(TokenTag.RPAREN)
         then_stmt = self._parse_stmt()
         else_stmt = None
+        elsif_stmts = []
+        while self._check(TokenTag.KW_ELSE) and self._check_next(TokenTag.KW_IF):
+            elseif_token = self._next_token()
+            self._next_token()
+            self._expect_token(TokenTag.LPAREN)
+            elsif_condition = self._parse_expr(0)
+            self._expect_token(TokenTag.RPAREN)
+            body = self._parse_stmt()
+            elsif_stmts.append(IfStmt(elseif_token, elsif_condition, body))
+
         if self._check(TokenTag.KW_ELSE):
             self._advance()
             else_stmt = self._parse_stmt()
-        return IfStmt(main_token, condition, then_stmt, else_stmt)
+        return IfStmt(main_token, condition, then_stmt, elsif_stmts=elsif_stmts, else_stmt=else_stmt)
 
     def _parse_continue(self):
         main = self._next_token()
@@ -369,9 +382,9 @@ class Parser:
     def _parse_primary_expr(self):
         token = self._next_token()
         if token.tag == TokenTag.INT_LIT:
-            return IntLiteral(int(token.value))
+            return IntLiteral(int(token.value), token)
         elif token.tag == TokenTag.STR_LIT:
-            return StrLiteral(token.value)
+            return StrLiteral(token.value, token)
         elif token.tag == TokenTag.KW_TRUE:
             return BoolLiteral(True)
         elif token.tag == TokenTag.KW_FALSE:

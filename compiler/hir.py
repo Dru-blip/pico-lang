@@ -18,6 +18,9 @@ class HirNodeTag(Enum):
     FieldAccess = "FieldAccess"
     StaticAccess = "StaticAccess"
     StoreField = "StoreField"
+
+    MultiBranch = "MultiBranch"
+
     Break = "Break"
     Continue = "Continue"
     Return = "Return"
@@ -126,6 +129,11 @@ class Branch(HirNode):
         )
 
 
+class MultiBranch(HirNode):
+    def __init__(self, token, branches, else_block):
+        super().__init__(HirNodeTag.MultiBranch, token=token, branches=branches, else_block=else_block)
+
+
 class Return(HirNode):
     def __init__(self, token=None, expr=None):
         super().__init__(HirNodeTag.Return, token=token, expr=expr)
@@ -223,14 +231,14 @@ class UnOp(HirNode):
 
 
 class ConstInt(HirNode):
-    def __init__(self, val: int):
-        super().__init__(HirNodeTag.ConstInt, val=val)
+    def __init__(self, token, val: int):
+        super().__init__(HirNodeTag.ConstInt, val=val, token=token)
         self.val = val
 
 
 class ConstStr(HirNode):
-    def __init__(self, val: str):
-        super().__init__(HirNodeTag.ConstStr, val=val)
+    def __init__(self, token, val: str):
+        super().__init__(HirNodeTag.ConstStr, val=val, token=token)
         self.val = val
 
 

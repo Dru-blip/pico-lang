@@ -42,12 +42,31 @@ class Sema:
                 self._analyze_stmt(stmt)
         elif kind == HirNodeTag.Branch:
             self._analyze_branch(node)
+        elif kind == HirNodeTag.MultiBranch:
+            self._analyze_multibranch(node)
         elif kind == HirNodeTag.StoreLocal:
             self._analyze_storelocal(node)
         elif kind == HirNodeTag.Break or kind == HirNodeTag.Continue:
             pass
         else:
             self._analyze_expr(node)
+
+    def _analyze_multibranch(self, node):
+        new_branches = []
+        for (condition, block) in node.branches:
+            cond_type = self._analyze_expr(condition)
+            if cond_type not in [TypeRegistry.BoolType, TypeRegistry.IntType, TypeRegistry.LongType]:
+                raise PicoError(
+                    f"condition should be of type {self.type_registry.get_type(TypeRegistry.BoolType).kind} or {self.type_registry.get_type(TypeRegistry.IntType).kind}",
+                    condition.token)
+            if cond_type in [TypeRegistry.IntType, TypeRegistry.LongType]:
+                condition = BoolCast(condition.token, condition)
+            self._analyze_stmt(block)
+            new_branches.append((condition, block))
+
+        if node.else_block:
+            self._analyze_stmt(node.else_block)
+        node.branches = new_branches
 
     def _analyze_branch(self, node):
         cond_type = self._analyze_expr(node.condition)
