@@ -8,9 +8,8 @@ from pico_error import PicoError
 from sema import Sema
 
 
-# TODO: Ternary expressions
-# TODO: for loops.
 # TODO: else if and switch statements.
+# TODO: Ternary expressions
 # TODO: emit type descriptors in bytecode.
 # TODO: introduce nil type.
 # TODO: unsigned integers,remaining signed integers(long,byte,char,byte).

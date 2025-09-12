@@ -11,7 +11,7 @@ from pico_ast import (
     Program,
     Assignment, BinOp, Log, VarDecl, ExprStmt, IfStmt, LoopStmt, Continue, Break, Call, StrLiteral, ExternLibBlock,
     BoolLiteral, StaticAccess, StructDecl, StructField, StructLiteral, FieldValue, FieldAccess, Cast, WhileLoopStmt,
-    UnOp, CompoundAssignment,
+    UnOp, CompoundAssignment, ForLoopStmt,
 )
 from pico_error import PicoSyntaxError
 from tokenizer import Tokenizer, TokenTag
@@ -179,7 +179,7 @@ class Parser:
         return FunctionPrototype(main_token, ident_token.value, return_type, params)
 
     def _parse_variable_decl(self):
-        main_token = self._next_token()
+        main_token = self._expect_token(TokenTag.KW_LET)
         ident_token = self._expect_token(TokenTag.ID)
         if self._check(TokenTag.COLON):
             var_type = self._parse_type_expr()
@@ -206,6 +206,8 @@ class Parser:
             return self._parse_loop_stmt()
         elif self._check(TokenTag.KW_WHILE):
             return self._parse_while_loop_stmt()
+        elif self._check(TokenTag.KW_FOR):
+            return self._parse_for_loop()
         elif self._check(TokenTag.KW_CONTINUE):
             return self._parse_continue()
         elif self._check(TokenTag.KW_BREAK):
@@ -215,6 +217,17 @@ class Parser:
             expr = self._parse_expr()
             self._expect_token(TokenTag.SEMICOLON)
             return ExprStmt(main_token, expr)
+
+    def _parse_for_loop(self):
+        main_token = self._next_token()
+        self._expect_token(TokenTag.LPAREN)
+        init = self._parse_variable_decl()
+        condition = self._parse_expr()
+        self._expect_token(TokenTag.SEMICOLON)
+        update = self._parse_expr()
+        self._expect_token(TokenTag.RPAREN)
+        body = self._parse_stmt()
+        return ForLoopStmt(main_token, init, condition, update, body)
 
     def _parse_while_loop_stmt(self):
         main_token = self._next_token()

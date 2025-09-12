@@ -61,6 +61,7 @@ class NodeTag(str, Enum):
     If = "If"
     LoopStmt = "LoopStmt"
     WhileLoopStmt = "WhileLoopStmt"
+    ForLoopStmt = "ForLoopStmt"
 
     Break = "Break"
     Continue = "Continue"
@@ -165,6 +166,11 @@ class LoopStmt(Stmt):
 class WhileLoopStmt(Stmt):
     def __init__(self, token, condition, body):
         super().__init__(NodeTag.WhileLoopStmt, token=token, condition=condition, body=body)
+
+
+class ForLoopStmt(Stmt):
+    def __init__(self, token, init, condition, update, body):
+        super().__init__(NodeTag.ForLoopStmt, token=token, init=init, condition=condition, update=update, body=body)
 
 
 class IfStmt(Node):

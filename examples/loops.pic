@@ -4,8 +4,8 @@ struct Counter{
 
 fn main()void{
     let a=Counter{.count=1};
-    while(a.count<20){
-        a.count+=2;
+    for(let b=1;b<10;b++){
+        a.count+=b;
     }
     log a.count;
     return;

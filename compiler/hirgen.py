@@ -184,6 +184,8 @@ class HirGen:
             self._generate_loop_stmt(node)
         elif node.tag == NodeTag.WhileLoopStmt:
             self._generate_while_loop(node)
+        elif node.tag == NodeTag.ForLoopStmt:
+            self._generate_for_loop(node)
         elif node.tag == NodeTag.Return:
             self._generate_return(node)
         elif node.tag == NodeTag.Log:
@@ -198,6 +200,81 @@ class HirGen:
             self.current_block.add_node(self._generate_expr(node.expr))
         else:
             raise NotImplementedError(f"Statement {node.tag} not implemented")
+
+    def _generate_for_loop(self, node):
+        self._begin_scope()
+        loop_id = self._next_loop_id()
+        self.loop_stack.append(loop_id)
+
+        # desugar for loop into generic loop construct
+        """
+            for(init;cond;update){
+                loop_body            
+            }
+
+            into 
+            
+            {   
+                init;
+                loop{
+                    if(!cond)break;
+                    loop_body
+                    update;
+                }            
+            }
+
+        """
+
+        init_block = HirBlock(
+            HirNodeTag.Block,
+            BlockLabelGenerator.next("loop_init"),
+            node.token,
+            BlockTag.Local,
+            self.scope_depth,
+            self.current_block,
+        )
+
+        self.current_block.add_node(init_block)
+        self.current_block = init_block
+        self._generate_var_decl(node.init)
+
+        loop_block = LoopBlock(
+            BlockLabelGenerator.next("loop"),
+            loop_id,
+            node.token,
+            self.current_block,
+            self.scope_depth,
+        )
+
+        self.current_block.add_node(loop_block)
+        self.current_block = loop_block
+
+        condition_val = self._generate_expr(node.condition)
+        inverted_condition = UnOp(condition_val.token, OpTag.Not, condition_val)
+        break_block = HirBlock(
+            HirNodeTag.Block,
+            BlockLabelGenerator.next("for_break"),
+            node.token,
+            BlockTag.Local,
+            self.scope_depth,
+            self.current_block,
+        )
+        break_block.add_node(Break(node.token, loop_id))
+
+        self.current_block.add_node(
+            Branch(
+                node.token,
+                inverted_condition,
+                break_block,
+                None,
+                BlockLabelGenerator.next("for_merge"),
+            )
+        )
+        self._generate_stmt(node.body)
+        self.current_block.add_node(self._generate_expr(node.update))
+        self.loop_stack.pop()
+        self._end_scope()
+        self.current_block = self.current_block.parent
 
     def _generate_while_loop(self, node):
         self._begin_scope()
