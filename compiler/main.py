@@ -8,9 +8,10 @@ from pico_error import PicoError
 from sema import Sema
 
 
+# TODO: static arrays
+# TODO: emit type descriptors in bytecode.
 # TODO: switch statements.
 # TODO: Ternary expressions
-# TODO: emit type descriptors in bytecode.
 # TODO: introduce nil type.
 # TODO: unsigned integers,remaining signed integers(long,byte,char,byte).
 def main(filename: str):
@@ -33,7 +34,6 @@ def main(filename: str):
                 f.write(binary)
         except PicoError as pe:
             ErrorPrinter.print_error(filename, source, pe.origin, pe.msg)
-
 
 if __name__ == '__main__':
     # main("test.pic")

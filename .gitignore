@@ -11,3 +11,4 @@ build
 __pycache__
 *.pbc
 dist
+pyproject.toml

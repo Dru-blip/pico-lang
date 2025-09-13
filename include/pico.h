@@ -33,7 +33,6 @@
 #define PICO_GET_OBJECT_FIELD_PTR(obj, index) (&((obj)->fields[(index)]))
 #define PICO_GET_OBJECT_FIELD(obj, index) ((obj)->fields[(index)])
 
-// Typed field getters
 #define PICO_OBJECT_GET_INT_FIELD(obj, index) ((obj)->fields[(index)].i_value)
 #define PICO_OBJECT_GET_BOOL_FIELD(obj, index) ((obj)->fields[(index)].boolean)
 #define PICO_OBJECT_GET_STR_FIELD(obj, index) ((obj)->fields[(index)].s_value)
@@ -44,6 +43,15 @@
 #define PICO_POP_STR(vm_ptr) ((vm_ptr)->stack[--((vm_ptr)->sp)].s_value)
 #define PICO_POP_OBJ(vm_ptr) ((vm_ptr)->stack[--((vm_ptr)->sp)].objref)
 
+
+#define GET_ARG_INT(args, idx)     ((args)[(idx)].i_value)
+#define GET_ARG_BOOL(args, idx)    ((args)[(idx)].boolean)
+#define GET_ARG_STR(args, idx)     ((args)[(idx)].s_value)
+#define GET_ARG_STR_LEN(args, idx) ((args)[(idx)].size)
+#define GET_ARG_OBJ(args, idx)     ((args)[(idx)].objref)
+#define GET_ARG_VAL(args, idx)     ((args)[(idx)])
+
+
 #define PICO_OBJ_FIELD_PTR(obj, index) (&((obj)->fields[index]))
 #define PICO_OBJ_FIELD(obj, index) ((obj)->fields[index])
 
@@ -52,9 +60,9 @@
 
 #define PICO_MAX_FRAMES 512
 #define PICO_MAX_STACK_SIZE 2048
-#define PICO_FRAME_NEW(func, stk, parent_frame)                                \
+#define PICO_FRAME_NEW(func, base, stack_ptr, parent_frame)                    \
     (pico_frame) {                                                             \
-        .function = (func), .stack = (stk), .ip = 0,                           \
+        .function = (func), .bp = (base), .sp = (stack_ptr), .ip = 0,          \
         .locals = calloc((func)->local_count, sizeof(pico_value)),             \
         .parent = parent_frame                                                 \
     }
@@ -126,7 +134,8 @@ typedef struct bytecode_unit {
 
 typedef struct pico_frame {
     pico_function *function;
-    pico_value *stack;
+    pico_value *bp;
+    pico_value *sp;
     pico_value *locals;
     pulong ip;
     struct pico_frame *parent;
@@ -160,6 +169,7 @@ typedef enum { NATIVE_RETURNS_VALUE, NATIVE_RETURNS_VOID } native_fn_kind;
 typedef struct native_fn_entry {
     const char *name;
     native_fn_kind kind;
+    puint param_count;
     union {
         pico_native_fn value_handle;
         pico_native_void_fn void_handle;
@@ -186,11 +196,13 @@ void pico_deinit_libraries(void **lib_handles);
 /**--------------------------------------------- */
 static inline void pico_register_native_function(pico_env *env,
                                                  const char *name,
+                                                 puint param_count,
                                                  pico_native_fn handle) {
 
     native_fn_entry *entry = malloc(sizeof(*entry));
     entry->name = strdup(name);
     entry->kind = NATIVE_RETURNS_VALUE;
+    entry->param_count = param_count;
     entry->value_handle = handle;
     HASH_ADD_KEYPTR(hh, env->native_functions, entry->name, strlen(entry->name),
                     entry);
@@ -198,11 +210,13 @@ static inline void pico_register_native_function(pico_env *env,
 
 static inline void
 pico_register_native_void_function(pico_env *env, const char *name,
+                                   puint param_count,
                                    pico_native_void_fn handle) {
 
     native_fn_entry *entry = malloc(sizeof(*entry));
     entry->name = strdup(name);
     entry->kind = NATIVE_RETURNS_VOID;
+    entry->param_count = param_count;
     entry->void_handle = handle;
     HASH_ADD_KEYPTR(hh, env->native_functions, entry->name, strlen(entry->name),
                     entry);

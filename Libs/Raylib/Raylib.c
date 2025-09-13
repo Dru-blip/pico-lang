@@ -12,9 +12,9 @@ static Color valueToColor(pico_object *obj) {
 }
 
 DEFINE_FN_VOID(init_window) {
-    pstr title = PICO_POP_STR(env->vm);
-    pint height = PICO_POP_INT(env->vm);
-    pint width = PICO_POP_INT(env->vm);
+    pint width = GET_ARG_INT(args, 0);
+    pint height = GET_ARG_INT(args, 1);
+    pstr title = GET_ARG_STR(args, 2);
 
     InitWindow(width, height, title);
 }
@@ -29,37 +29,37 @@ DEFINE_FN_VOID(begin_drawing) { BeginDrawing(); }
 
 DEFINE_FN_VOID(end_drawing) { EndDrawing(); }
 
-DEFINE_FN_VOID(set_target_fps) { SetTargetFPS(PICO_POP_INT(env->vm)); }
+DEFINE_FN_VOID(set_target_fps) { SetTargetFPS(GET_ARG_INT(args, 0)); }
 
 DEFINE_FN_VOID(clear_background) {
-    ClearBackground(valueToColor(PICO_POP_OBJ(env->vm)));
+    ClearBackground(valueToColor(GET_ARG_OBJ(args, 0)));
 }
 
 DEFINE_FN_VOID(draw_text) {
-    Color color = valueToColor(PICO_POP_OBJ(env->vm));
-    pint size = PICO_POP_INT(env->vm);
-    pint y = PICO_POP_INT(env->vm);
-    pint x = PICO_POP_INT(env->vm);
-    pstr text = PICO_POP_STR(env->vm);
+    pstr text = GET_ARG_STR(args, 0);
+    pint x = GET_ARG_INT(args, 1);
+    pint y = GET_ARG_INT(args, 2);
+    pint size = GET_ARG_INT(args, 3);
+    Color color = valueToColor(GET_ARG_OBJ(args, 4));
     DrawText(text, x, y, size, color);
 }
 
 PICO_EXPORT void pico_lib_Init(pico_env *env) {
-    pico_register_native_void_function(env, "raylib_init_window",
+    pico_register_native_void_function(env, "raylib_init_window", 3,
                                        raylib_init_window);
-    pico_register_native_void_function(env, "raylib_close_window",
+    pico_register_native_void_function(env, "raylib_close_window", 0,
                                        raylib_close_window);
-    pico_register_native_function(env, "raylib_window_should_close",
+    pico_register_native_function(env, "raylib_window_should_close", 0,
                                   raylib_window_should_close);
-    pico_register_native_void_function(env, "raylib_begin_drawing",
+    pico_register_native_void_function(env, "raylib_begin_drawing", 0,
                                        raylib_begin_drawing);
-    pico_register_native_void_function(env, "raylib_end_drawing",
+    pico_register_native_void_function(env, "raylib_end_drawing", 0,
                                        raylib_end_drawing);
-    pico_register_native_void_function(env, "raylib_set_target_fps",
+    pico_register_native_void_function(env, "raylib_set_target_fps", 1,
                                        raylib_set_target_fps);
-    pico_register_native_void_function(env, "raylib_clear_background",
+    pico_register_native_void_function(env, "raylib_clear_background", 1,
                                        raylib_clear_background);
 
-    pico_register_native_void_function(env, "raylib_draw_text",
+    pico_register_native_void_function(env, "raylib_draw_text", 5,
                                        raylib_draw_text);
 }

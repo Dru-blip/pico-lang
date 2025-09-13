@@ -215,6 +215,10 @@ class Expr(Node):
         super().__init__(tag, **props)
 
 
+class ArrayLiteral(Expr):
+    def __init__(self,token,elements=[]):
+
+
 class StructLiteral(Expr):
     def __init__(self, token, name, values):
         super().__init__(NodeTag.StructLiteral, token=token, name=name, values=values)
