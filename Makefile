@@ -1,15 +1,22 @@
 CC      := clang
 CFLAGS  := -Wall -g -O3 -std=c23 -Iinclude
 
+
 OUTDIR  := out
 
-PICO_BIN := $(OUTDIR)/pico
+PICO_BIN  := $(OUTDIR)/pico
+PICOD_BIN := $(OUTDIR)/picod
+
 PICO_SRCS := $(wildcard runtime/*.c)
 
-all: $(PICO_BIN) compiler
+all: $(PICO_BIN)
 
 $(PICO_BIN): outdir
 	$(CC) $(CFLAGS) -o $@ $(PICO_SRCS) -ldl
+
+
+$(PICOD_BIN): outdir
+	$(CC) $(DEBUGFLAGS) -o $@ $(PICO_SRCS) debugger/debugger.c -ldl -lws
 
 compiler: compiler/main.py
 	pyinstaller --onefile $< --name picoc

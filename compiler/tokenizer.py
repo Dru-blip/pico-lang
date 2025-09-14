@@ -15,6 +15,8 @@ class TokenTag(str, Enum):
     RPAREN = "RPAREN"
     LBRACE = "LBRACE"
     RBRACE = "RBRACE"
+    LBRACKET = "LBRACKET"
+    RBRACKET = "RBRACKET"
 
     PLUS = "PLUS"
     PLUS_PLUS = "PLUS_PLUS"

@@ -13,6 +13,7 @@ void flip_spaces(pico_gc *gc) {
     gc_semi_space temp = gc->from_space;
     gc->from_space = gc->to_space;
     gc->to_space = temp;
+    gc->to_space.alloc_ptr = gc->to_space.space_start;
 }
 
 gc_semi_space gc_semi_space_new(size_t size) {

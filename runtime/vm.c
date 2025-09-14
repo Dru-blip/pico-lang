@@ -5,6 +5,10 @@
 
 #include <stdlib.h>
 
+#ifdef DEBUG_BUILD
+#include "debugger.h"
+#endif
+
 #define READ_OPCODE() frame->function->code[frame->ip++]
 #define READ_TWO_BYTES() (READ_OPCODE() | (READ_OPCODE() << 8))
 #define READ_CONSTANT(vm) (vm->constants[READ_TWO_BYTES()])
@@ -32,6 +36,23 @@ static void pico_run_frame(pico_env *env, pico_vm *vm, pico_frame *frame) {
 frame_start:
     pulong code_len = frame->function->code_len;
     while (frame->ip < code_len) {
+
+#ifdef DEBUG_BUILD
+        dbg_event *event = dbg_event_queue_pop(env->event_queue);
+        if (event) {
+            switch (event->kind) {
+            case DBG_EVENT_PAUSE: {
+                vm->state = PICO_VM_STATE_PAUSED;
+                break;
+            }
+            }
+        }
+
+        if (vm->state == PICO_VM_STATE_PAUSED) {
+            continue;
+        }
+#endif
+
         const pbyte opcode = READ_OPCODE();
         switch (opcode) {
         case OP_LIC: {
@@ -135,7 +156,6 @@ frame_start:
         case OP_IOR: {
             LOGICAL_OP(frame, ||) break;
         }
-
         case OP_LBT: {
             PUSH(pico_true);
             break;
@@ -184,14 +204,14 @@ frame_start:
         case OP_JF: {
             const pico_value a = POP();
             if (!a.boolean) {
-                puint offset = READ_TWO_BYTES();
-                frame->ip = offset;
+                puint jmp_index = READ_TWO_BYTES();
+                frame->ip = jmp_index;
             }
             break;
         }
         case OP_JMP: {
-            puint offset = READ_TWO_BYTES();
-            frame->ip = offset;
+            puint jmp_index = READ_TWO_BYTES();
+            frame->ip = jmp_index;
             break;
         }
         case OP_CALL: {
@@ -242,6 +262,7 @@ frame_start:
                 --vm->fc;
                 env->frame = frame;
                 PICO_FRAME_DEINIT(*child_frame);
+                vm->sp = frame->sp - vm->stack;
                 goto frame_start;
             }
             vm->sp = frame->sp - vm->stack;

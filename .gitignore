@@ -12,3 +12,5 @@ __pycache__
 *.pbc
 dist
 pyproject.toml
+.vscode
+venv

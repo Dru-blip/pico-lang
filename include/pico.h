@@ -43,14 +43,12 @@
 #define PICO_POP_STR(vm_ptr) ((vm_ptr)->stack[--((vm_ptr)->sp)].s_value)
 #define PICO_POP_OBJ(vm_ptr) ((vm_ptr)->stack[--((vm_ptr)->sp)].objref)
 
-
-#define GET_ARG_INT(args, idx)     ((args)[(idx)].i_value)
-#define GET_ARG_BOOL(args, idx)    ((args)[(idx)].boolean)
-#define GET_ARG_STR(args, idx)     ((args)[(idx)].s_value)
+#define GET_ARG_INT(args, idx) ((args)[(idx)].i_value)
+#define GET_ARG_BOOL(args, idx) ((args)[(idx)].boolean)
+#define GET_ARG_STR(args, idx) ((args)[(idx)].s_value)
 #define GET_ARG_STR_LEN(args, idx) ((args)[(idx)].size)
-#define GET_ARG_OBJ(args, idx)     ((args)[(idx)].objref)
-#define GET_ARG_VAL(args, idx)     ((args)[(idx)])
-
+#define GET_ARG_OBJ(args, idx) ((args)[(idx)].objref)
+#define GET_ARG_VAL(args, idx) ((args)[(idx)])
 
 #define PICO_OBJ_FIELD_PTR(obj, index) (&((obj)->fields[index]))
 #define PICO_OBJ_FIELD(obj, index) ((obj)->fields[index])
@@ -141,6 +139,12 @@ typedef struct pico_frame {
     struct pico_frame *parent;
 } pico_frame;
 
+typedef enum pico_vm_state {
+    PICO_VM_STATE_RUNNING,
+    PICO_VM_STATE_PAUSED,
+    PICO_VM_STATE_STOPPED
+} pico_vm_state;
+
 typedef struct pico_vm {
     pulong fc;
     pulong sp;
@@ -149,6 +153,9 @@ typedef struct pico_vm {
     pico_value *constants;
     pico_function *functions;
     puint main_function_index;
+#ifdef DEBUG_BUILD
+    pico_vm_state state;
+#endif
 } pico_vm;
 
 struct pico_env {
@@ -157,6 +164,10 @@ struct pico_env {
     pico_gc *gc;
     struct native_fn_entry *native_functions;
     void **lib_handles;
+
+#ifdef DEBUG_BUILD
+    struct dbg_event_queue *event_queue;
+#endif
 };
 
 typedef pico_value (*pico_native_fn)(pico_env *env, pico_value *args);

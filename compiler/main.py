@@ -8,6 +8,7 @@ from pico_error import PicoError
 from sema import Sema
 
 
+# TODO: refactor the increment and decrement operators
 # TODO: static arrays
 # TODO: emit type descriptors in bytecode.
 # TODO: switch statements.

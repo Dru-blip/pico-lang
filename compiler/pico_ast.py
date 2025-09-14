@@ -40,6 +40,7 @@ class OpTag:
 
 class NodeTag(str, Enum):
     NamedType = "NamedType"
+    ArrayType="ArrayType"
 
     IntLiteral = "IntLiteral"
     BoolLiteral = "BoolLiteral"
@@ -54,6 +55,7 @@ class NodeTag(str, Enum):
     Assignment = "Assignment"
     CompoundAssignment = "CompoundAssignment"
     Call = "Call"
+    ArrayLiteral="ArrayLiteral"
     StructLiteral = "StructLiteral"
     StaticAccess = "StaticAccess"
     FieldAccess = "FieldAccess"
@@ -97,6 +99,10 @@ class Program:
 class NamedType(Node):
     def __init__(self, token, name: str):
         super().__init__(NodeTag.NamedType, token=token, name=name)
+
+class ArrayType(Node):
+    def __init__(self, token, element_type):
+        super().__init__(NodeTag.ArrayType, token=token, element_type=element_type)
 
 
 class Decl(Node):
@@ -217,6 +223,7 @@ class Expr(Node):
 
 class ArrayLiteral(Expr):
     def __init__(self,token,elements=[]):
+        super().__init__(NodeTag.ArrayLiteral, token=token,  elements=elements)
 
 
 class StructLiteral(Expr):

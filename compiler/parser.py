@@ -12,6 +12,7 @@ from pico_ast import (
     Assignment, BinOp, Log, VarDecl, ExprStmt, IfStmt, LoopStmt, Continue, Break, Call, StrLiteral, ExternLibBlock,
     BoolLiteral, StaticAccess, StructDecl, StructField, StructLiteral, FieldValue, FieldAccess, Cast, WhileLoopStmt,
     UnOp, CompoundAssignment, ForLoopStmt,
+    ArrayType,ArrayLiteral
 )
 from pico_error import PicoSyntaxError
 from tokenizer import Tokenizer, TokenTag
@@ -377,6 +378,17 @@ class Parser:
             expr = self._parse_prefix_expr()
             return UnOp(token, OpTag.Not, expr)
 
+        if token.tag==TokenTag.LBRACKET:
+            self._advance()
+            elements=[]
+            while not self._check(TokenTag.RBRACKET):
+                elements.append(self._parse_expr())
+                if self._check(TokenTag.COMMA):
+                    self._advance()
+            self._advance()
+            self._advance()
+            return ArrayLiteral(token, elements)
+
         return self._parse_primary_expr()
 
     def _parse_primary_expr(self):
@@ -391,6 +403,8 @@ class Parser:
             return BoolLiteral(False)
         elif token.tag == TokenTag.ID:
             return Identifier(token.value, token)
+        elif token.tag == TokenTag.LBRACKET:
+            pass
         else:
             raise PicoSyntaxError("invalid syntax", self.tokens[self.pos - 2])
 
@@ -398,5 +412,10 @@ class Parser:
         token = self._next_token()
         if token.tag == TokenTag.ID:
             return NamedType(token, token.value)
+        elif token.tag == TokenTag.LBRACKET:
+            self._advance()
+            type_expr = self._parse_type_expr()
+            self._expect_token(TokenTag.RBRACKET)
+            return ArrayType(token,type_expr)
         else:
             raise PicoSyntaxError("unknown type specifier", token)

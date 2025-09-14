@@ -7,11 +7,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef DEBUG_BUILD
+#include "debugger.h"
+#endif
+
 void pico_env_init(pico_env *env) {
     env->lib_handles = nullptr;
     env->native_functions = nullptr;
     env->vm = malloc(sizeof(pico_vm));
     env->gc = pico_gc_new(1024);
+#ifdef DEBUG_BUILD
+    env->vm->state=PICO_VM_STATE_PAUSED;
+    env->event_queue = malloc(sizeof(struct dbg_event_queue));
+    dbg_event_queue_init(env->event_queue);
+#endif
 }
 
 void pico_env_deinit(pico_env *env) {
@@ -42,7 +51,7 @@ void pico_load_libraries(pico_env *env, char *lib_dir_name) {
             continue;
 
         snprintf(path, sizeof(path), "%s/%s", lib_dir_name, entry->d_name);
-        void *lib_handle = dlopen(path, RTLD_LAZY);
+        void *lib_handle = dlopen(path, RTLD_NOW);
 
         if (!lib_handle) {
             fprintf(stderr, "Failed to load library %s: %s\n", entry->d_name,
