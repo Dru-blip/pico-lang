@@ -12,7 +12,7 @@ from pico_ast import (
     Assignment, BinOp, Log, VarDecl, ExprStmt, IfStmt, LoopStmt, Continue, Break, Call, StrLiteral, ExternLibBlock,
     BoolLiteral, StaticAccess, StructDecl, StructField, StructLiteral, FieldValue, FieldAccess, Cast, WhileLoopStmt,
     UnOp, CompoundAssignment, ForLoopStmt,
-    ArrayType,ArrayLiteral
+    ArrayType,ArrayLiteral,TypeDecl
 )
 from pico_error import PicoSyntaxError
 from tokenizer import Tokenizer, TokenTag
@@ -128,7 +128,18 @@ class Parser:
         if self._check(TokenTag.KW_STRUCT):
             return self._parse_struct_decl()
 
+        if self._check(TokenTag.KW_TYPE):
+            return self._parse_type_decl()
+
         raise PicoSyntaxError("invalid syntax", self.current_token)
+
+    def _parse_type_decl(self):
+        main_token = self._next_token()
+        name = self._expect_token(TokenTag.ID)
+        self._expect_token(TokenTag.EQUAL)
+        type_expr = self._parse_type_expr()
+        self._expect_token(TokenTag.SEMICOLON)
+        return TypeDecl(main_token, name.value, type_expr)
 
     def _parse_struct_decl(self):
         main_token = self._next_token()

@@ -81,6 +81,8 @@ class NodeTag(str, Enum):
     StructField = "StructField"
     StructDecl = "StructDecl"
 
+    TypeDecl="TypeDecl"
+
 
 class Node:
     def __init__(self, tag: NodeTag, token: Optional[Any] = None, **props: Any):
@@ -109,6 +111,9 @@ class Decl(Node):
     def __init__(self, tag: NodeTag, **props):
         super().__init__(tag, **props)
 
+class TypeDecl(Decl):
+    def __init__(self, token, name: str, type_node):
+        super().__init__(NodeTag.TypeDecl, token=token, name=name, type=type_node)
 
 class StructField(Node):
     def __init__(self, token, field_type, name):

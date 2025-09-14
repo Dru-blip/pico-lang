@@ -154,6 +154,9 @@ class TypeRegistry:
     def is_integer_type(self, type_id):
         return type_id == TypeRegistry.IntType or type_id == TypeRegistry.LongType
 
+    def get_fields(self, type_id):
+        return self.types[type_id].fields
+
     @staticmethod
     def get_arithmetic_type(lhs_id: int, rhs_id: int) -> int:
         return TypeRegistry._lookup_matrix(TypeRegistry._arith_matrix, lhs_id, rhs_id)

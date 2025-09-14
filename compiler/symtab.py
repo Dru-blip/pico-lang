@@ -8,6 +8,7 @@ class SymbolKind:
     Parameter = "Parameter"
     Module = "Module"
     StructField = "StructField"
+    Type = "Type"
 
 
 class Linkage(Enum):

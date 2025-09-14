@@ -220,8 +220,10 @@ class Sema:
             node.name.symbol = sym
 
         if node.name.symbol.kind != SymbolKind.Struct:
-            raise PicoError("Invalid struct literal", node.token)
-        field_symbols = node.name.symbol.fields
+            if node.name.symbol.kind != SymbolKind.Type:
+                raise PicoError("Invalid struct literal", node.token)
+        field_symbols = node.name.symbol.fields if node.name.symbol.kind != SymbolKind.Type else self.type_registry.get_fields(
+            node.name.symbol.type)
         for i, field in enumerate(node.values):
             result = next(
                 ((i, sym) for i, sym in enumerate(field_symbols) if field.name.value == sym.name),
@@ -238,6 +240,7 @@ class Sema:
                     f"Field type mismatch: expected {self.type_registry.get_type(match_sym.type).kind} got {self.type_registry.get_type(field_type).kind}",
                     field.name)
             field.field_index = match_sym.field_index
+        node.num_fields = len(field_symbols)
         return node.name.symbol.type
 
     def _analyze_call(self, node):

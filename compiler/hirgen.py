@@ -53,6 +53,12 @@ class HirGen:
                 self.global_block.add_symbol(Symbol(node.name, SymbolKind.Struct, struct_type))
             continue
 
+        for node in self.program.nodes:
+            if node.tag == NodeTag.TypeDecl:
+                base_type = self._transform_type(node.type)
+                self.global_block.add_symbol(Symbol(node.name, SymbolKind.Type, base_type))
+            continue
+
     def generate(self):
         self._type_gen_pass()
         for node in self.program.nodes:
@@ -89,6 +95,8 @@ class HirGen:
             struct_type.is_complete = True
             struct_symbol.fields = fields
             self.global_block.add_symbol(struct_symbol)
+        elif node.tag == NodeTag.TypeDecl:
+            pass
         else:
             self._gen_function(node)
 
@@ -467,9 +475,9 @@ class HirGen:
 
     def _generate_expr(self, node):
         if node.tag == NodeTag.IntLiteral:
-            return ConstInt(node.token,node.value)
+            return ConstInt(node.token, node.value)
         elif node.tag == NodeTag.StrLiteral:
-            return ConstStr(node.token,node.value)
+            return ConstStr(node.token, node.value)
         elif node.tag == NodeTag.BoolLiteral:
             return ConstBool(node.value)
         elif node.tag == NodeTag.Identifier:
@@ -552,8 +560,6 @@ class HirGen:
             else:
                 type_symbol = self.global_block.resolve(type_node.name)
                 if not type_symbol:
-                    raise PicoError(f"Unknown type {type_node.name}", type_node.token)
-                if type_symbol.kind != SymbolKind.Struct:
                     raise PicoError(f"Unknown type {type_node.name}", type_node.token)
                 return type_symbol.type
 

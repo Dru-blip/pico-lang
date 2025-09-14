@@ -208,7 +208,7 @@ class IrModule:
                 code += expr.function_symbol.function_id.to_bytes(2, "little")
         elif expr.kind == HirNodeTag.CreateStruct:
             code.append(OP_ALLOCA_STRUCT)
-            code += len(expr.name.symbol.fields).to_bytes(2, "little")
+            code += expr.num_fields.to_bytes(2, "little")
             for field in expr.values:
                 self.compile_expr(field.value, code)
                 code.append(OP_SET_FIELD)
