@@ -14,24 +14,24 @@
 #define READ_TWO_BYTES() (READ_OPCODE() | (READ_OPCODE() << 8))
 #define READ_CONSTANT(vm) (vm->constants[READ_TWO_BYTES()])
 
-#define PUSH(val) (*((frame)->sp)++ = (val))
-#define POP() (*--((frame)->sp))
-#define PEEK(frame) (frame->sp - 1)
+#define PUSH(vm, val) (vm->stack[vm->sp++] = (val))
+#define POP(vm) (vm->stack[--vm->sp])
+#define PEEK(vm) (&vm->stack[vm->sp - 1])
 
-#define BINARY_ARITH_INT(frame, op)                                            \
-    const pico_value b = POP();                                                \
-    const pico_value a = POP();                                                \
-    PUSH(TO_PICO_INT(a.i_value op b.i_value));
+#define BINARY_ARITH_INT(vm, op)                                               \
+    const pico_value b = POP(vm);                                              \
+    const pico_value a = POP(vm);                                              \
+    PUSH(vm, TO_PICO_INT(a.i_value op b.i_value));
 
-#define COMPARE_INT(frame, op)                                                 \
-    const pico_value b = POP();                                                \
-    const pico_value a = POP();                                                \
-    PUSH(((a.i_value op b.i_value) ? PICO_TRUE : PICO_FALSE));
+#define COMPARE_INT(vm, op)                                                    \
+    const pico_value b = POP(vm);                                              \
+    const pico_value a = POP(vm);                                              \
+    PUSH(vm, ((a.i_value op b.i_value) ? PICO_TRUE : PICO_FALSE));
 
-#define LOGICAL_OP(frame, op)                                                  \
-    const pico_value b = POP();                                                \
-    const pico_value a = POP();                                                \
-    PUSH(((a.boolean op b.boolean) ? PICO_TRUE : PICO_FALSE));
+#define LOGICAL_OP(vm, op)                                                     \
+    const pico_value b = POP(vm);                                              \
+    const pico_value a = POP(vm);                                              \
+    PUSH(vm, ((a.boolean op b.boolean) ? PICO_TRUE : PICO_FALSE));
 
 static void pico_run_frame(pico_env *env, pico_vm *vm, pico_frame *frame) {
 frame_start:
@@ -39,16 +39,6 @@ frame_start:
     while (frame->ip < code_len) {
 
 #ifdef DEBUG_BUILD
-        dbg_event *event = dbg_event_queue_pop(env->event_queue);
-        if (event) {
-            switch (event->kind) {
-            case DBG_EVENT_PAUSE: {
-                vm->state = PICO_VM_STATE_PAUSED;
-                break;
-            }
-            }
-        }
-
         if (vm->state == PICO_VM_STATE_PAUSED) {
             continue;
         }
@@ -57,21 +47,21 @@ frame_start:
         const pbyte opcode = READ_OPCODE();
         switch (opcode) {
         case OP_LIC: {
-            PUSH(READ_CONSTANT(vm));
+            PUSH(vm, READ_CONSTANT(vm));
             break;
         }
         case OP_LSC: {
-            PUSH(READ_CONSTANT(vm));
+            PUSH(vm, READ_CONSTANT(vm));
             break;
         }
         case OP_STORE: {
             puint index = READ_TWO_BYTES();
-            frame->locals[index] = POP();
+            frame->locals[index] = POP(vm);
             break;
         }
         case OP_LOAD: {
             puint index = READ_TWO_BYTES();
-            PUSH(frame->locals[index]);
+            PUSH(vm, frame->locals[index]);
             break;
         }
         case OP_IINC: {
@@ -85,88 +75,88 @@ frame_start:
             break;
         }
         case OP_IADD: {
-            BINARY_ARITH_INT(frame, +)
+            BINARY_ARITH_INT(vm, +)
             break;
         }
         case OP_ISUB: {
-            BINARY_ARITH_INT(frame, -)
+            BINARY_ARITH_INT(vm, -)
             break;
         }
         case OP_IMUL: {
-            BINARY_ARITH_INT(frame, *)
+            BINARY_ARITH_INT(vm, *)
             break;
         }
         case OP_IDIV: {
-            BINARY_ARITH_INT(frame, /)
+            BINARY_ARITH_INT(vm, /)
             break;
         }
         case OP_IREM: {
-            BINARY_ARITH_INT(frame, %)
+            BINARY_ARITH_INT(vm, %)
             break;
         }
         case OP_IBAND: {
-            BINARY_ARITH_INT(frame, &)
+            BINARY_ARITH_INT(vm, &)
             break;
         }
         case OP_IBOR: {
-            BINARY_ARITH_INT(frame, |)
+            BINARY_ARITH_INT(vm, |)
             break;
         }
         case OP_IBXOR: {
-            BINARY_ARITH_INT(frame, ^)
+            BINARY_ARITH_INT(vm, ^)
             break;
         }
         case OP_ISHL: {
-            BINARY_ARITH_INT(frame, <<)
+            BINARY_ARITH_INT(vm, <<)
             break;
         }
         case OP_ISHR: {
-            BINARY_ARITH_INT(frame, >>)
+            BINARY_ARITH_INT(vm, >>)
             break;
         }
         case OP_IEQ: {
-            COMPARE_INT(frame, ==)
+            COMPARE_INT(vm, ==)
             break;
         }
         case OP_INE: {
-            COMPARE_INT(frame, !=)
+            COMPARE_INT(vm, !=)
             break;
         }
         case OP_ILT: {
-            COMPARE_INT(frame, <)
+            COMPARE_INT(vm, <)
             break;
         }
         case OP_ILE: {
-            COMPARE_INT(frame, <=)
+            COMPARE_INT(vm, <=)
             break;
         }
         case OP_IGT: {
-            COMPARE_INT(frame, >)
+            COMPARE_INT(vm, >)
             break;
         }
         case OP_IGE: {
-            COMPARE_INT(frame, >=)
+            COMPARE_INT(vm, >=)
             break;
         }
 
         case OP_IAND: {
-            LOGICAL_OP(frame, &&)
+            LOGICAL_OP(vm, &&)
             break;
         }
         case OP_IOR: {
-            LOGICAL_OP(frame, ||) break;
+            LOGICAL_OP(vm, ||) break;
         }
         case OP_LBT: {
-            PUSH(pico_true);
+            PUSH(vm, pico_true);
             break;
         }
         case OP_LBF: {
-            PUSH(pico_false);
+            PUSH(vm, pico_false);
             break;
         }
         case OP_I2B: {
-            const pico_value a = POP();
-            PUSH(a.i_value ? pico_true : pico_false);
+            const pico_value a = POP(vm);
+            PUSH(vm, a.i_value ? pico_true : pico_false);
             break;
         }
         case OP_L2B: {
@@ -174,13 +164,13 @@ frame_start:
             break;
         }
         case OP_B2L: {
-            const pico_value a = POP();
-            PUSH(a.boolean ? pico_one : pico_zero);
+            const pico_value a = POP(vm);
+            PUSH(vm, a.boolean ? pico_one : pico_zero);
             break;
         }
         case OP_B2I: {
-            const pico_value a = POP();
-            PUSH(a.boolean ? pico_one : pico_zero);
+            const pico_value a = POP(vm);
+            PUSH(vm, a.boolean ? pico_one : pico_zero);
             break;
         }
         case OP_I2L: {
@@ -192,17 +182,17 @@ frame_start:
             break;
         }
         case OP_BNOT: {
-            const pico_value a = POP();
-            PUSH(a.boolean ? pico_false : pico_true);
+            const pico_value a = POP(vm);
+            PUSH(vm, a.boolean ? pico_false : pico_true);
             break;
         }
         case OP_LOG: {
-            const pico_value a = POP();
+            const pico_value a = POP(vm);
             printf("%d\n", a.i_value);
             break;
         }
         case OP_JF: {
-            const pico_value a = POP();
+            const pico_value a = POP(vm);
             if (!a.boolean) {
                 puint jmp_index = READ_TWO_BYTES();
                 frame->ip = jmp_index;
@@ -217,13 +207,17 @@ frame_start:
         case OP_CALL: {
             puint function_index = READ_TWO_BYTES();
             pico_function *function = &vm->functions[function_index];
+
+            pulong frame_start_sp = vm->sp - function->param_count;
+
             pico_frame child_frame =
-                PICO_FRAME_NEW(function, frame->sp, frame->sp, frame);
+                PICO_FRAME_NEW(function, frame_start_sp, frame);
             vm->frames[vm->fc++] = child_frame;
             frame = &vm->frames[vm->fc - 1];
             env->frame = frame;
+
             for (pint i = function->param_count - 1; i >= 0; i--) {
-                frame->locals[i] = POP();
+                frame->locals[i] = POP(vm);
             }
             goto frame_start;
         }
@@ -236,9 +230,9 @@ frame_start:
                 printf("cannot find function: %s\n", fn_name->s_value);
                 exit(EXIT_FAILURE);
             }
-            pico_value *args = frame->sp - entry->param_count;
+            pico_value *args = &vm->stack[vm->sp - entry->param_count];
             entry->void_handle(env, args);
-            frame->sp -= entry->param_count;
+            vm->sp -= entry->param_count;
             break;
         }
         case OP_CALL_EXTERN: {
@@ -250,9 +244,9 @@ frame_start:
                 printf("cannot find function: %s\n", fn_name->s_value);
                 exit(EXIT_FAILURE);
             }
-            pico_value *args = frame->sp - entry->param_count;
-            frame->sp -= entry->param_count;
-            PUSH(entry->value_handle(env, args));
+            pico_value *args = &vm->stack[vm->sp - entry->param_count];
+            vm->sp -= entry->param_count;
+            PUSH(vm, entry->value_handle(env, args));
             break;
         }
         case OP_RET: {
@@ -262,68 +256,66 @@ frame_start:
                 --vm->fc;
                 env->frame = frame;
                 PICO_FRAME_DEINIT(*child_frame);
-                vm->sp = frame->sp - vm->stack;
                 goto frame_start;
             }
-            vm->sp = frame->sp - vm->stack;
             env->frame = nullptr;
             goto frame_end;
         }
         case OP_ALLOCA_STRUCT: {
             puint num_fields = READ_TWO_BYTES();
             pico_object *obj = pico_env_alloc_object(env, num_fields);
-            PUSH(TO_PICO_OBJ(obj));
+            PUSH(vm, TO_PICO_OBJ(obj));
             break;
         }
         // TODO: make sure store field pops the object and value
         case OP_SET_FIELD: {
             puint field_index = READ_TWO_BYTES();
-            pico_value value = POP();
-            pico_value *obj = PEEK(frame);
+            pico_value value = POP(vm);
+            pico_value *obj = PEEK(vm);
             PICO_OBJECT_SET_FIELD(obj->objref, field_index, value);
             break;
         }
         case OP_STORE_FIELD: {
             puint field_index = READ_TWO_BYTES();
-            pico_value obj = POP();
-            PICO_OBJECT_SET_FIELD(obj.objref, field_index, POP());
+            pico_value obj = POP(vm);
+            PICO_OBJECT_SET_FIELD(obj.objref, field_index, POP(vm));
             break;
         }
         case OP_LOAD_FIELD: {
             puint field_index = READ_TWO_BYTES();
-            pico_value obj = POP();
-            PUSH(PICO_OBJ_FIELD(obj.objref, field_index));
+            pico_value obj = POP(vm);
+            PUSH(vm, PICO_OBJ_FIELD(obj.objref, field_index));
             break;
         }
         case OP_IFIELD_INC: {
             puint field_index = READ_TWO_BYTES();
-            pico_object *obj = POP().objref;
+            pico_object *obj = POP(vm).objref;
             (&obj->fields[field_index])->i_value++;
             break;
         }
         case OP_IFIELD_DEC: {
             puint field_index = READ_TWO_BYTES();
-            pico_object *obj = POP().objref;
+            pico_object *obj = POP(vm).objref;
             (&obj->fields[field_index])->i_value--;
             break;
         }
         case OP_ALLOCA_ARRAY: {
             puint size = READ_TWO_BYTES();
             pico_object *obj = pico_env_alloc_object(env, size);
-            PUSH(TO_PICO_OBJ(obj));
+            PUSH(vm, TO_PICO_OBJ(obj));
             break;
         }
         case OP_ARRAY_SET: {
             puint index = READ_TWO_BYTES();
-            pico_value value = POP();
-            pico_object *obj = PEEK(frame)->objref;
+            pico_value value = POP(vm);
+            pico_object *obj = PEEK(vm)->objref;
             PICO_OBJECT_SET_FIELD(obj, index, value);
             break;
         }
         case OP_ARRAY_STORE: {
-            pico_value val = POP();
-            pint index = POP().i_value;
-            pico_value arr = POP();
+            pico_value val = POP(vm);
+            pint index = POP(vm).i_value;
+            pico_value arr = POP(vm);
             if (index < 0 || index >= arr.objref->num_fields) {
                 printf("Index %d out of bounds for length %d\n", index,
                        arr.objref->num_fields);
@@ -334,18 +326,25 @@ frame_start:
             break;
         }
         case OP_ARRAY_GET: {
-            pint index = POP().i_value;
-            pico_value arr = POP();
+            pint index = POP(vm).i_value;
+            pico_value arr = POP(vm);
             if (index < 0 || index >= arr.objref->num_fields) {
                 printf("Index %d out of bounds for length %d\n", index,
                        arr.objref->num_fields);
                 pico_env_deinit(env);
                 exit(EXIT_FAILURE);
             }
-            PUSH(PICO_GET_OBJECT_FIELD(arr.objref, index));
+            PUSH(vm, PICO_GET_OBJECT_FIELD(arr.objref, index));
             break;
         }
         }
+
+#ifdef PICO_DEBUG
+        if (vm->state == PICO_VM_STATE_STEP) {
+            printf("step pause");
+            vm->state = PICO_VM_STATE_PAUSED;
+        }
+#endif
     }
 
 frame_end:;
@@ -365,8 +364,7 @@ void pico_vm_run(pico_env *env) {
         &env->vm->functions[env->vm->main_function_index];
 
     // push the main function onto the call stack
-    pico_frame frame = PICO_FRAME_NEW(main_func, &env->vm->stack[env->vm->sp],
-                                      &env->vm->stack[env->vm->sp], nullptr);
+    pico_frame frame = PICO_FRAME_NEW(main_func, env->vm->sp, nullptr);
     env->vm->frames[env->vm->fc++] = frame;
     pico_run_frame(env, env->vm, &frame);
     PICO_FRAME_DEINIT(frame);
