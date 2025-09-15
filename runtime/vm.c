@@ -3,6 +3,7 @@
 #include "stb_ds.h"
 #include "uthash.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #ifdef DEBUG_BUILD
@@ -123,7 +124,6 @@ frame_start:
             BINARY_ARITH_INT(frame, >>)
             break;
         }
-
         case OP_IEQ: {
             COMPARE_INT(frame, ==)
             break;
@@ -275,6 +275,7 @@ frame_start:
             PUSH(TO_PICO_OBJ(obj));
             break;
         }
+        // TODO: make sure store field pops the object and value
         case OP_SET_FIELD: {
             puint field_index = READ_TWO_BYTES();
             pico_value value = POP();
@@ -285,7 +286,7 @@ frame_start:
         case OP_STORE_FIELD: {
             puint field_index = READ_TWO_BYTES();
             pico_value obj = POP();
-            PICO_OBJECT_SET_FIELD(obj.objref, field_index, *PEEK(frame));
+            PICO_OBJECT_SET_FIELD(obj.objref, field_index, POP());
             break;
         }
         case OP_LOAD_FIELD: {
@@ -304,6 +305,44 @@ frame_start:
             puint field_index = READ_TWO_BYTES();
             pico_object *obj = POP().objref;
             (&obj->fields[field_index])->i_value--;
+            break;
+        }
+        case OP_ALLOCA_ARRAY: {
+            puint size = READ_TWO_BYTES();
+            pico_object *obj = pico_env_alloc_object(env, size);
+            PUSH(TO_PICO_OBJ(obj));
+            break;
+        }
+        case OP_ARRAY_SET: {
+            puint index = READ_TWO_BYTES();
+            pico_value value = POP();
+            pico_object *obj = PEEK(frame)->objref;
+            PICO_OBJECT_SET_FIELD(obj, index, value);
+            break;
+        }
+        case OP_ARRAY_STORE: {
+            pico_value val = POP();
+            pint index = POP().i_value;
+            pico_value arr = POP();
+            if (index < 0 || index >= arr.objref->num_fields) {
+                printf("Index %d out of bounds for length %d\n", index,
+                       arr.objref->num_fields);
+                pico_env_deinit(env);
+                exit(EXIT_FAILURE);
+            }
+            PICO_OBJECT_SET_FIELD(arr.objref, index, val);
+            break;
+        }
+        case OP_ARRAY_GET: {
+            pint index = POP().i_value;
+            pico_value arr = POP();
+            if (index < 0 || index >= arr.objref->num_fields) {
+                printf("Index %d out of bounds for length %d\n", index,
+                       arr.objref->num_fields);
+                pico_env_deinit(env);
+                exit(EXIT_FAILURE);
+            }
+            PUSH(PICO_GET_OBJECT_FIELD(arr.objref, index));
             break;
         }
         }

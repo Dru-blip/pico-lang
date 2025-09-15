@@ -14,12 +14,14 @@ class HirNodeTag(Enum):
 
     StructDecl = "StructDecl"
     CreateStruct = "CreateStruct"
+    ArrayLiteral = "ArrayLiteral"
     FieldValue = "FieldValue"
     FieldAccess = "FieldAccess"
     StaticAccess = "StaticAccess"
     StoreField = "StoreField"
 
     MultiBranch = "MultiBranch"
+    IndexedAccess = "IndexedAccess"
 
     Break = "Break"
     Continue = "Continue"
@@ -35,6 +37,7 @@ class HirNodeTag(Enum):
     ConstStr = "ConstStr"
     ConstBool = "ConstBool"
     Call = "Call"
+    StoreIndexed = "StoreIndexed"
 
 
 class BlockTag(Enum):
@@ -191,10 +194,20 @@ class FieldAccess(HirNode):
         self.field_index = -1  # set by sema
 
 
+class IndexedAccess(HirNode):
+    def __init__(self, token, container, index):
+        super().__init__(HirNodeTag.IndexedAccess, token=token, container=container, index=index)
+
+
 class CreateStruct(HirNode):
     def __init__(self, token, name, values):
         super().__init__(HirNodeTag.CreateStruct, token=token, name=name, values=values)
         self.symbol = None
+
+
+class ArrayLiteral(HirNode):
+    def __init__(self, token, elements):
+        super().__init__(HirNodeTag.ArrayLiteral, token=token, elements=elements)
 
 
 class FieldValue(HirNode):
@@ -212,6 +225,11 @@ class StoreField(HirNode):
                          value=value)
         self.field_index = -1  # resolved during sema
         self.symbol = None  # field symbol
+
+
+class StoreIndexed(HirNode):
+    def __init__(self, token, obj, value):
+        super().__init__(HirNodeTag.StoreIndexed, token=token, obj=obj, value=value)
 
 
 class Call(HirNode):

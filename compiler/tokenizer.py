@@ -78,8 +78,8 @@ class TokenTag(str, Enum):
     KW_FALSE = "KW_FALSE"
     KW_STRUCT = "KW_STRUCT"
     KW_AS = "KW_AS"
-    KW_FOR="KW_FOR"
-    KW_TYPE="KW_TYPE"
+    KW_FOR = "KW_FOR"
+    KW_TYPE = "KW_TYPE"
 
 
 @dataclass
@@ -220,6 +220,12 @@ class Tokenizer:
             case "}":
                 tok.tag = TokenTag.RBRACE
                 self._advance()
+            case "[":
+                tok.tag = TokenTag.LBRACKET
+                self._advance()
+            case "]":
+                tok.tag = TokenTag.RBRACKET
+                self._advance()
             case "(":
                 tok.tag = TokenTag.LPAREN
                 self._advance()
@@ -241,7 +247,18 @@ class Tokenizer:
                     tok.tag = TokenTag.PLUS
             case "-":
                 self._advance()
-                if self._check("-"):
+                if self._current().isdigit():
+                    start = self.pos
+                    self._advance()
+                    while self._current().isdigit():
+                        self._advance()
+                    if self._current() in ("l", "L"):
+                        self._advance()
+                        tok.tag = TokenTag.LONG_LIT
+                    else:
+                        tok.tag = TokenTag.INT_LIT
+                    tok.value = self.source[start:self.pos]
+                elif self._check("-"):
                     self._advance()
                     tok.tag = TokenTag.MINUS_MINUS
                 elif self._check("="):

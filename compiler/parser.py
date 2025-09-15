@@ -12,7 +12,7 @@ from pico_ast import (
     Assignment, BinOp, Log, VarDecl, ExprStmt, IfStmt, LoopStmt, Continue, Break, Call, StrLiteral, ExternLibBlock,
     BoolLiteral, StaticAccess, StructDecl, StructField, StructLiteral, FieldValue, FieldAccess, Cast, WhileLoopStmt,
     UnOp, CompoundAssignment, ForLoopStmt,
-    ArrayType,ArrayLiteral,TypeDecl
+    ArrayType, ArrayLiteral, TypeDecl, IndexedAccess
 )
 from pico_error import PicoSyntaxError
 from tokenizer import Tokenizer, TokenTag
@@ -79,6 +79,7 @@ class Parser:
             TokenTag.DOT: Operator(OperatorKind.Postfix, 99, 100, OpTag.FieldAccess, FieldAccess),
             TokenTag.PLUS_PLUS: Operator(OperatorKind.Postfix, 99, 100, OpTag.PostIncrement, UnOp),
             TokenTag.MINUS_MINUS: Operator(OperatorKind.Postfix, 99, 100, OpTag.PostDecrement, UnOp),
+            TokenTag.LBRACKET: Operator(OperatorKind.Postfix, 99, 100, OpTag.IndexedAccess, IndexedAccess),
 
             TokenTag.KW_AS: Operator(OperatorKind.Postfix, 103, 105, OpTag.Cast, Cast),
         }
@@ -197,6 +198,7 @@ class Parser:
         main_token = self._expect_token(TokenTag.KW_LET)
         ident_token = self._expect_token(TokenTag.ID)
         if self._check(TokenTag.COLON):
+            self._advance()
             var_type = self._parse_type_expr()
         else:
             var_type = None
@@ -361,6 +363,11 @@ class Parser:
         if op_tag == OpTag.PostIncrement:
             self._advance()
             return UnOp(main_token, op_tag, lhs)
+        if op_tag == OpTag.IndexedAccess:
+            self._advance()
+            index = self._parse_expr()
+            self._expect_token(TokenTag.RBRACKET)
+            return IndexedAccess(main_token, lhs, index)
         return None
 
     def _parse_call_args(self):
@@ -389,14 +396,13 @@ class Parser:
             expr = self._parse_prefix_expr()
             return UnOp(token, OpTag.Not, expr)
 
-        if token.tag==TokenTag.LBRACKET:
+        if token.tag == TokenTag.LBRACKET:
             self._advance()
-            elements=[]
+            elements = []
             while not self._check(TokenTag.RBRACKET):
                 elements.append(self._parse_expr())
                 if self._check(TokenTag.COMMA):
                     self._advance()
-            self._advance()
             self._advance()
             return ArrayLiteral(token, elements)
 
@@ -424,9 +430,8 @@ class Parser:
         if token.tag == TokenTag.ID:
             return NamedType(token, token.value)
         elif token.tag == TokenTag.LBRACKET:
-            self._advance()
             type_expr = self._parse_type_expr()
             self._expect_token(TokenTag.RBRACKET)
-            return ArrayType(token,type_expr)
+            return ArrayType(token, type_expr)
         else:
             raise PicoSyntaxError("unknown type specifier", token)

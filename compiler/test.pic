@@ -1,18 +1,7 @@
-type i32=int;
-
-type Color=RaylibColor;
-
 fn main()void{
-    let a=Color{.r=10};
+    let a:[int]=[1,2];
+    a[1]=5;
+    let b:int=a[1];
+    log b;
     return;
-}
-
-struct RaylibColor{
-    int r;
-}
-
-extern @prefix="IO" {
-    fn putchar(i32 c) int;
-    fn print_int(i32 c)void;
-    fn puts(str c)void;
 }

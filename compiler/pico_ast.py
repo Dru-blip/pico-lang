@@ -1,4 +1,3 @@
-from ctypes.wintypes import tagPOINT
 from enum import Enum
 from typing import Any, Optional, List
 
@@ -28,6 +27,7 @@ class OpTag:
     Call = "Call"
     StaticAccess = "StaticAccess"
     StructLiteral = "StructLiteral"
+    IndexedAccess = "IndexedAccess"
     FieldAccess = "FieldAccess"
     Cast = "Cast"
 
@@ -40,7 +40,7 @@ class OpTag:
 
 class NodeTag(str, Enum):
     NamedType = "NamedType"
-    ArrayType="ArrayType"
+    ArrayType = "ArrayType"
 
     IntLiteral = "IntLiteral"
     BoolLiteral = "BoolLiteral"
@@ -55,11 +55,12 @@ class NodeTag(str, Enum):
     Assignment = "Assignment"
     CompoundAssignment = "CompoundAssignment"
     Call = "Call"
-    ArrayLiteral="ArrayLiteral"
+    ArrayLiteral = "ArrayLiteral"
     StructLiteral = "StructLiteral"
     StaticAccess = "StaticAccess"
     FieldAccess = "FieldAccess"
     Cast = "Cast"
+    IndexedAccess = "IndexedAccess"
 
     If = "If"
     LoopStmt = "LoopStmt"
@@ -81,7 +82,7 @@ class NodeTag(str, Enum):
     StructField = "StructField"
     StructDecl = "StructDecl"
 
-    TypeDecl="TypeDecl"
+    TypeDecl = "TypeDecl"
 
 
 class Node:
@@ -102,6 +103,7 @@ class NamedType(Node):
     def __init__(self, token, name: str):
         super().__init__(NodeTag.NamedType, token=token, name=name)
 
+
 class ArrayType(Node):
     def __init__(self, token, element_type):
         super().__init__(NodeTag.ArrayType, token=token, element_type=element_type)
@@ -111,9 +113,11 @@ class Decl(Node):
     def __init__(self, tag: NodeTag, **props):
         super().__init__(tag, **props)
 
+
 class TypeDecl(Decl):
     def __init__(self, token, name: str, type_node):
         super().__init__(NodeTag.TypeDecl, token=token, name=name, type=type_node)
+
 
 class StructField(Node):
     def __init__(self, token, field_type, name):
@@ -227,8 +231,8 @@ class Expr(Node):
 
 
 class ArrayLiteral(Expr):
-    def __init__(self,token,elements=[]):
-        super().__init__(NodeTag.ArrayLiteral, token=token,  elements=elements)
+    def __init__(self, token, elements):
+        super().__init__(NodeTag.ArrayLiteral, token=token, elements=elements)
 
 
 class StructLiteral(Expr):
@@ -255,6 +259,11 @@ class FieldAccess(Expr):
 class StaticAccess(Expr):
     def __init__(self, token, qualifier, name):
         super().__init__(NodeTag.StaticAccess, token=token, qualifier=qualifier, name=name)
+
+
+class IndexedAccess(Expr):
+    def __init__(self, token, container, index):
+        super().__init__(NodeTag.IndexedAccess, token=token, container=container, index=index)
 
 
 class Call(Expr):

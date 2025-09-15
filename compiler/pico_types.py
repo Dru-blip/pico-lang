@@ -12,16 +12,18 @@ class TypeKind:
     Str = "Str"
     Function = "function"
     Struct = "Struct"
+    Array = "Array"
 
 
 class TypeObject:
-    def __init__(self, kind, *, ret_type=0, params=None, fields=None, id=0):
+    def __init__(self, kind, *, ret_type=0, params=None, fields=None, id=0, elem_type=0):
         self.kind = kind
         self.ret_type = ret_type
         self.params = params or []
         self.fields = fields or []
         self.id = id
         self.is_complete = False  # for structs
+        self.elem_type = 0  # for arrays
 
     def __str__(self):
         return f"Type<{self.kind}:{self.id}>"
@@ -139,6 +141,17 @@ class TypeRegistry:
         TypeRegistry.type_counter += 1
         return new_type.id
 
+    def add_array_type(self, element_type):
+        for i, t in enumerate(self.types[6:], start=6):
+            if not t or t.kind != TypeKind.Array: continue
+            if t.elem_type != element_type: continue
+            return i
+        new_type = TypeObject(TypeKind.Array, elem_type=element_type, id=TypeRegistry.type_counter)
+        self.types.append(new_type)
+        new_type.elem_type=element_type
+        TypeRegistry.type_counter += 1
+        return new_type.id
+
     def add_incomplete_struct(self):
         new_type = TypeObject(TypeKind.Struct, id=TypeRegistry.type_counter)
         self.types.append(new_type)
@@ -147,6 +160,9 @@ class TypeRegistry:
 
     def get_ret_type(self, type_id):
         return self.types[type_id].ret_type
+
+    def get_element_type(self, type_id):
+        return self.types[type_id].elem_type
 
     def get_type(self, type_id):
         return self.types[type_id]

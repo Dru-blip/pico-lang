@@ -62,6 +62,11 @@ OP_IFIELD_INC = 0x73
 OP_IFIELD_DEC = 0x74
 OP_STORE_FIELD = 0x75
 
+OP_ALLOCA_ARRAY = 0x79
+OP_ARRAY_STORE = 0x7A
+OP_ARRAY_SET = 0x7B
+OP_ARRAY_GET = 0x7C
+
 OP_LOG = 0x85
 
 # TODO: replace with type_tag_matrix
@@ -213,10 +218,26 @@ class IrModule:
                 self.compile_expr(field.value, code)
                 code.append(OP_SET_FIELD)
                 code += field.field_index.to_bytes(2, "little")
+        elif expr.kind == HirNodeTag.ArrayLiteral:
+            code.append(OP_ALLOCA_ARRAY)
+            code += len(expr.elements).to_bytes(2, "little")
+            for i, ele in enumerate(expr.elements):
+                self.compile_expr(ele, code)
+                code.append(OP_ARRAY_SET)
+                code += i.to_bytes(2, "little")
         elif expr.kind == HirNodeTag.FieldAccess:
             self.compile_expr(expr.obj, code)
             code.append(OP_LOAD_FIELD)
             code += expr.field_index.to_bytes(2, "little")
+        elif expr.kind == HirNodeTag.IndexedAccess:
+            self.compile_expr(expr.container, code)
+            self.compile_expr(expr.index, code)
+            code.append(OP_ARRAY_GET)
+        elif expr.kind == HirNodeTag.StoreIndexed:
+            self.compile_expr(expr.obj.container, code)
+            self.compile_expr(expr.obj.index, code)
+            self.compile_expr(expr.value, code)
+            code.append(OP_ARRAY_STORE)
         else:
             raise ValueError(f"Unsupported expression kind: {expr.kind}")
 

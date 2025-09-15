@@ -50,10 +50,13 @@
 #define OP_ALLOCA_STRUCT 0x70
 #define OP_SET_FIELD 0x71
 #define OP_LOAD_FIELD 0x72
-
 #define OP_IFIELD_INC 0x73
 #define OP_IFIELD_DEC 0x74
 #define OP_STORE_FIELD 0x75
 
+#define OP_ALLOCA_ARRAY 0x79
+#define OP_ARRAY_STORE 0x7A
+#define OP_ARRAY_SET 0x7B
+#define OP_ARRAY_GET 0x7C
 
 #define OP_LOG 0x85

@@ -8,7 +8,7 @@ from pico_error import PicoError
 from sema import Sema
 
 
-# TODO: static arrays
+# TODO: array literals
 # TODO: emit type descriptors in bytecode.
 # TODO: refactor the increment and decrement operators
 # TODO: switch statements.
@@ -38,5 +38,5 @@ def main(filename: str):
 
 
 if __name__ == '__main__':
-    # main("test.pic")
-    typer.run(main)
+    main("test.pic")
+    # typer.run(main)

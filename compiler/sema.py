@@ -206,6 +206,40 @@ class Sema:
                     f"invalid type cast {self.type_registry.get_type(from_type).kind} to {self.type_registry.get_type(node.to_type).kind}",
                     node.token)
             return node.to_type
+        elif kind == HirNodeTag.ArrayLiteral:
+            if not node.elements:
+                raise PicoError("cannot infer type for empty array literal", node.token)
+            first_type = self._analyze_expr(node.elements[0])
+            for element in node.elements[1:]:
+                ele_type = self._analyze_expr(element)
+                if ele_type != first_type:
+                    raise PicoError(
+                        f"array elements must be of same type, got {self.type_registry.get_type(first_type).kind} "
+                        f"and {self.type_registry.get_type(ele_type).kind}",
+                        element.token
+                    )
+
+            node.element_type = first_type
+            array_type = self.type_registry.add_array_type(first_type)
+            return array_type
+        elif kind == HirNodeTag.IndexedAccess:
+            container_type = self._analyze_expr(node.container)
+            index_type = self._analyze_expr(node.index)
+            if not self.type_registry.is_integer_type(index_type):
+                raise PicoError(f"index must be of integer type got {self.type_registry.get_type(index_type).kind}",
+                                node.token)
+            node.type_id = self.type_registry.get_element_type(container_type)
+            return node.type_id
+        elif kind == HirNodeTag.StoreIndexed:
+            container_type = self._analyze_expr(node.obj)
+            val_type = self._analyze_expr(node.value)
+            result_type = self.type_registry.get_assignment_type(container_type, val_type)
+            if result_type == TypeRegistry.NoneType:
+                raise PicoError(
+                    f"Cannot store {self.type_registry.get_type(val_type).kind} inside {self.type_registry.get_type(container_type).kind} array",
+                    node.token
+                )
+            return TypeRegistry.VoidType
         else:
             raise Exception(f"implementation error: cannot analyze node: {node.kind} yet")
 
@@ -379,8 +413,9 @@ class Sema:
                 type_symbol = self.block.resolve(type_node.name)
                 if not type_symbol:
                     raise PicoError(f"Unknown type {type_node.name}", type_node.token)
-                if type_symbol.kind != SymbolKind.Struct:
-                    raise PicoError(f"Unknown type {type_node.name}", type_node.token)
                 return type_symbol.type
+        if type_node.tag == NodeTag.ArrayType:
+            element_type = self._transform_type(type_node.element_type)
+            return self.type_registry.add_array_type(element_type)
 
         raise PicoError(f"Unknown type {type_node.name}", type_node.token)

@@ -1,8 +1,11 @@
 fn main()void{
-    let a=1;
-    while(a<10){
-        log a;
-        a+=1;
+    for(let i=0;i<10;i+=1){
+       for(let j=0;j<10;j+=1){
+            if(j==5){
+                break;
+            }
+            log j;
+       }
     }
     return;
 }

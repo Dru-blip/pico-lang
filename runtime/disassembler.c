@@ -90,6 +90,11 @@ static const opcode_info opcode_table[] = {
     {OP_IFIELD_DEC, "IFieldDec", 2, print_operand_two},
     {OP_STORE_FIELD, "StoreField", 2, print_operand_two},
 
+    {OP_ALLOCA_ARRAY, "AllocaArray", 2, print_operand_two},
+    {OP_ARRAY_STORE, "ArrayStore", 0, nullptr},
+    {OP_ARRAY_SET, "ArraySet", 2, print_operand_two},
+    {OP_ARRAY_GET, "ArrayGet", 0, nullptr},
+
     {OP_LOG, "Log", 0, nullptr},
 
     {0xFF, "unknown", 0, nullptr} // sentinel

@@ -3,7 +3,8 @@ from typing import Optional
 from function_id import FunctionIdGenerator
 from hir import BinOp, HirBlock, FunctionBlock, Return as HirReturn, ConstInt, HirNodeTag, HirLog, StoreLocal, BlockTag, \
     VarRef, Branch, LoopBlock, Continue, Break, Call, HirExternalLibBlock, ConstStr, ConstBool, StaticAccess, \
-    FieldValue, CreateStruct, FieldAccess, Cast, UnOp, StoreField, MultiBranch
+    FieldValue, CreateStruct, FieldAccess, Cast, UnOp, StoreField, MultiBranch, ArrayLiteral, IndexedAccess, \
+    StoreIndexed
 from pico_ast import Program, FunctionDeclaration, FunctionPrototype, Block, Return, NodeTag, OpTag
 from pico_error import PicoError
 from pico_types import TypeRegistry
@@ -496,25 +497,28 @@ class HirGen:
                 return StoreLocal(target.name, node.token, None, value)
             if target.kind == HirNodeTag.FieldAccess:
                 return StoreField(node.token, target.obj, target.target, value)
+            if target.kind == HirNodeTag.IndexedAccess:
+                return StoreIndexed(node.token, target, value)
             raise PicoError("invalid assignment target", node.token)
         elif node.tag == NodeTag.CompoundAssignment:
             target = self._generate_expr(node.target)
             value = self._generate_expr(node.val)
 
-            if isinstance(target, VarRef):
+            if target.kind == HirNodeTag.VarRef:
                 return StoreLocal(
                     target.name,
                     node.token,
                     None,
                     BinOp(node.val.token, node.op_tag, target, value)
                 )
-            elif isinstance(target, FieldAccess):
+            elif target.kind == HirNodeTag.FieldAccess:
                 return StoreField(
                     node.token,
                     target.obj,
                     target.target,
                     BinOp(node.val.token, node.op_tag, target, value)
                 )
+            # TODO: handle indexed access
             else:
                 raise PicoError("Invalid assignment target", node.token)
         elif node.tag == NodeTag.Call:
@@ -537,11 +541,20 @@ class HirGen:
                 field_value = self._generate_expr(field.value)
                 field_values.append(FieldValue(field.name, field_value))
             return CreateStruct(node.token, name, field_values)
+        elif node.tag == NodeTag.ArrayLiteral:
+            elements = []
+            for element in node.elements:
+                elements.append(self._generate_expr(element))
+            return ArrayLiteral(node.token, elements)
         elif node.tag == NodeTag.Cast:
             expr = self._generate_expr(node.expr)
             type_id = self._transform_type(node.target_type)
             # from_type will be later set by sema after. for now leave it as NoneType
             return Cast(node.token, expr, TypeRegistry.NoneType, type_id)
+        elif node.tag == NodeTag.IndexedAccess:
+            container = self._generate_expr(node.container)
+            index = self._generate_expr(node.index)
+            return IndexedAccess(node.token, container, index)
         else:
             raise NotImplementedError(f"Expression {node.tag} not implemented")
 
@@ -562,6 +575,9 @@ class HirGen:
                 if not type_symbol:
                     raise PicoError(f"Unknown type {type_node.name}", type_node.token)
                 return type_symbol.type
+        if type_node.tag == NodeTag.ArrayType:
+            element_type = self._transform_type(type_node.element_type)
+            return self.type_registry.add_array_type(element_type)
 
         raise PicoError(f"Unknown type {type_node.name}", type_node.token)
 
